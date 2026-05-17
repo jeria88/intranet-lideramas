@@ -75,16 +75,50 @@ _FORMATO_ABC = (
     "**PASO 3 — B.- PLAN DE ACCIÓN OPERATIVO**\n"
     "Plan estructurado paso a paso con medidas: a) Preventivas b) Formativas c) Reparatorias. Especifica responsables.\n\n"
     "**PASO 4 — C.- CHECKLIST DE PROCESO**\n"
-    "Pasos lógicos para el monitoreo del proceso (lista de verificación)."
+    "Comienza SIEMPRE con estas verificaciones obligatorias antes de listar los pasos:\n"
+    "  a. Los pasos se ajustan a debido proceso — SÍ / NO\n"
+    "  b. Se aplicó marco normativo vigente — SÍ / NO\n"
+    "  c. Se aplicaron artículos del reglamento correspondiente — SÍ / NO\n"
+    "  d. Se aplicaron protocolos según el RICE — SÍ / NO\n"
+    "  e. Medio de aviso y citación al apoderado — SÍ / NO\n"
+    "Luego continúa con los pasos lógicos de monitoreo del proceso."
+)
+
+_REGLA_OPD_OLN = (
+    "\n\nREGLA OBLIGATORIA — NOMENCLATURA OPD/OLN:\n"
+    "La institución anteriormente llamada OPD (Oficina de Protección de Derechos) "
+    "se llama actualmente OLN (Oficina Local de la Niñez). Siempre debes escribir "
+    "'OPD/OLN', NUNCA solo 'OPD'."
+)
+
+_ORGANIGRAMA_DERIVACION = (
+    "\n\nORGANIGRAMA DE COMPETENCIAS Y DERIVACIÓN:\n"
+    "Jerarquía de autoridad institucional (no orden de atención):\n"
+    "  Nivel directivo superior: Representante Legal\n"
+    "  Nivel directivo de establecimiento: Director/a\n"
+    "  Equipos especializados: Convivencia Educativa, Inspector/a General, UTP\n\n"
+    "Competencias por estamento:\n"
+    "• REPRESENTANTE LEGAL: adquisiciones, contrataciones, desvinculaciones de personal, "
+    "derivación a otros estamentos para casos fuera de su competencia.\n"
+    "• DIRECTOR/A: bienestar superior del estudiante, identidad institucional a través del PEI, "
+    "derivación a Convivencia Educativa, Inspector General o UTP según corresponda.\n"
+    "• INSPECTOR/A GENERAL: aplicación del RIOHS, identidad institucional a través del PEI.\n"
+    "• CONVIVENCIA EDUCATIVA: bienestar superior del estudiante, debido proceso y protocolos "
+    "según el RICE, identidad institucional a través del PEI.\n"
+    "• UTP: bienestar superior del estudiante, decretos de educación y evaluación, "
+    "Reglamento Interno de Evaluación, derivación a otros estamentos para casos fuera de su competencia.\n\n"
+    "INSTRUCCIÓN: Si la consulta NO corresponde a tu rol según este mapa, identifica el "
+    "estamento competente y deriva explícitamente — no intentes resolver el caso."
 )
 
 _DISCLAIMER = (
-    "\n\n*La Inteligencia Artificial es un asesor que operacionaliza los procesos en pos de la "
-    "optimización de los tiempos para promover el análisis y reflexión de los equipos*"
+    "\n\n*La IA es generativa y necesita de su retroalimentación. Si cree que la respuesta no es "
+    "correcta según su contexto, contáctese con el servicio de asesoría de Lideramas, "
+    "quienes le darán una pronta solución.*"
 )
 
 # Bloque completo de reglas + formato que se añade al final de cada prompt
-_SUFIJO_COMUN = _REGLA_DIAGNOSTICOS + _REGLA_CONFLICTOS + _REGLA_INTEGRIDAD + _REGLA_RICE + _FORMATO_ABC + _DISCLAIMER
+_SUFIJO_COMUN = _ORGANIGRAMA_DERIVACION + _REGLA_DIAGNOSTICOS + _REGLA_CONFLICTOS + _REGLA_INTEGRIDAD + _REGLA_RICE + _REGLA_OPD_OLN + _FORMATO_ABC + _DISCLAIMER
 
 ESTABLISHMENT_NAMES = {
     'TEMUCO':   'Temuco',
