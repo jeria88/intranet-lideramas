@@ -541,9 +541,10 @@ def conversation_list(request, slug):
     if not _check_assistant_access(request, assistant):
         return render(request, 'ai_modules/no_access.html')
 
+    from django.db.models import Count
     conversations = ChatConversation.objects.filter(
         user=request.user, assistant=assistant
-    ).order_by('-updated_at')
+    ).annotate(message_count=Count('messages')).order_by('-updated_at')
 
     return render(request, 'ai_modules/conversaciones_list.html', {
         'assistant': assistant,
@@ -557,6 +558,9 @@ def conversation_new(request, slug):
     if not _check_assistant_access(request, assistant):
         return render(request, 'ai_modules/no_access.html')
 
+    if request.method != 'POST':
+        return redirect('ai_modules:conversation_list', slug=slug)
+
     conv = ChatConversation.objects.create(user=request.user, assistant=assistant)
     return redirect('ai_modules:conversation_detail', slug=slug, conv_id=conv.pk)
 
@@ -569,6 +573,9 @@ def conversation_save_case(request, slug, conv_id):
 
     assistant = get_object_or_404(AIAssistant, slug=slug, is_active=True)
     conversation = get_object_or_404(ChatConversation, pk=conv_id, user=request.user, assistant=assistant)
+
+    if conversation.case:
+        return JsonResponse({'status': 'success', 'case_id': conversation.case.pk, 'existing': True})
 
     last_ai = conversation.messages.filter(role='assistant').last()
     if not last_ai:

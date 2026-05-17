@@ -39,9 +39,10 @@
             <div class="assistant-tag">{{ assistant.name }}</div>
             <h1>Conversaciones</h1>
         </div>
-        <a href="{% url 'ai_modules:conversation_new' slug=assistant.slug %}" class="btn-nueva">
-            + Nueva conversación
-        </a>
+        <form method="post" action="{% url 'ai_modules:conversation_new' slug=assistant.slug %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-nueva">+ Nueva conversación</button>
+        </form>
     </div>
 
     {% if conversations %}
@@ -53,7 +54,7 @@
                     <div class="conv-date">{{ conv.updated_at|date:"d/m/Y H:i" }}</div>
                 </div>
                 <div class="conv-badge">
-                    {{ conv.messages.count }} mensaje{{ conv.messages.count|pluralize }}
+                    {{ conv.message_count }} mensaje{{ conv.message_count|pluralize }}
                 </div>
             </a>
             {% endfor %}

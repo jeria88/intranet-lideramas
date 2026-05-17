@@ -171,15 +171,28 @@ async function sendMessage() {
 }
 
 function guardarCaso() {
+    const btn = document.querySelector('.btn-guardar-caso');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
     const fd = new FormData();
     fd.append('csrfmiddlewaretoken', CSRF);
     fetch(CASE_URL, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
-            if (d.status === 'success') showToast('✓ Caso guardado en el repositorio');
-            else showToast(d.message || 'Error al guardar el caso');
+            if (d.status === 'success') {
+                showToast(d.existing ? 'Este caso ya fue guardado' : '✓ Caso guardado en el repositorio');
+                btn.textContent = 'Caso guardado';
+            } else {
+                showToast(d.message || 'Error al guardar el caso');
+                btn.disabled = false;
+                btn.textContent = 'Guardar como caso';
+            }
         })
-        .catch(() => showToast('Error de conexión'));
+        .catch(() => {
+            showToast('Error de conexión');
+            btn.disabled = false;
+            btn.textContent = 'Guardar como caso';
+        });
 }
 
 function showToast(msg) {
