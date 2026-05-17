@@ -542,13 +542,18 @@ def conversation_list(request, slug):
     if not _check_assistant_access(request, assistant):
         return render(request, 'ai_modules/no_access.html')
 
-    conversations = ChatConversation.objects.filter(
+    latest = ChatConversation.objects.filter(
         user=request.user, assistant=assistant
-    ).annotate(message_count=Count('messages')).order_by('-updated_at')
+    ).order_by('-updated_at').first()
 
-    return render(request, 'ai_modules/conversaciones_list.html', {
+    if latest:
+        return redirect('ai_modules:conversation_detail', slug=slug, conv_id=latest.pk)
+
+    return render(request, 'ai_modules/chat_app.html', {
         'assistant': assistant,
-        'conversations': conversations,
+        'conversation': None,
+        'chat_messages': [],
+        'all_conversations': [],
     })
 
 
@@ -616,9 +621,10 @@ def conversation_detail(request, slug, conv_id):
 
         ConversationMessage.objects.create(conversation=conversation, role='user', content=user_message)
 
-        # Actualizar título con el primer mensaje
+        new_title = None
         if conversation.title == 'Nueva conversación':
-            conversation.title = user_message[:80]
+            new_title = user_message[:80]
+            conversation.title = new_title
             conversation.save(update_fields=['title', 'updated_at'])
 
         history = [{'role': m.role, 'content': m.content} for m in conversation.messages.all()]
@@ -632,14 +638,18 @@ def conversation_detail(request, slug, conv_id):
         ConversationMessage.objects.create(conversation=conversation, role='assistant', content=ai_response)
         conversation.save(update_fields=['updated_at'])
 
-        return JsonResponse({'response': ai_response, 'status': 'success'})
+        return JsonResponse({'response': ai_response, 'status': 'success', 'new_title': new_title})
 
     messages = list(conversation.messages.all())
     last_ai = next((m for m in reversed(messages) if m.role == 'assistant'), None)
+    all_conversations = ChatConversation.objects.filter(
+        user=request.user, assistant=assistant
+    ).order_by('-updated_at')
 
-    return render(request, 'ai_modules/conversacion_detail.html', {
+    return render(request, 'ai_modules/chat_app.html', {
         'assistant': assistant,
         'conversation': conversation,
         'chat_messages': messages,
         'last_ai_response': last_ai.content if last_ai else None,
+        'all_conversations': all_conversations,
     })
