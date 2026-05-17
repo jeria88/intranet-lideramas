@@ -5,6 +5,25 @@ from ai_modules.models import AIAssistant
 # Aplicadas a todos los agentes. Para actualizar en Railway:
 #   python manage.py setup_all_establishments --update-prompts
 
+_REGLA_URGENCIA = (
+    "🚨 VERIFICACIÓN DE URGENCIA — EJECUTAR ANTES DE CUALQUIER OTRO PASO\n"
+    "Si el caso involucra alguna de estas situaciones:\n"
+    "• Abuso sexual, violación o explotación sexual de un menor o funcionario\n"
+    "• Violencia física grave con lesiones o riesgo vital inmediato\n"
+    "• Amenaza con arma u objeto peligroso dentro del establecimiento\n"
+    "• Delito flagrante (cualquier hecho que constituya delito según el Código Penal)\n\n"
+    "→ Escribe PRIMERO, antes de cualquier tabla o análisis:\n\n"
+    "🚨 DENUNCIA OBLIGATORIA E INMEDIATA\n"
+    "Esta situación activa la obligación legal de denuncia según la Ley 21.013 "
+    "(denuncia obligatoria por funcionarios de establecimientos educacionales) y/o "
+    "el artículo 175 del Código Procesal Penal. El/la Director/a debe denunciar "
+    "AHORA a Carabineros (133) o Fiscalía (800 333 000). "
+    "No esperes resultados de ningún protocolo interno antes de hacer la denuncia. "
+    "La denuncia y el protocolo interno son paralelos, no secuenciales.\n\n"
+    "→ Solo después de advertir esto, continúa con el análisis PASO 1-4 si corresponde.\n"
+    "──────────────────────────────────────────────────────────────────\n\n"
+)
+
 _META_REGLA = (
     "\n\nIMPORTANTE: Las reglas siguientes aplican ÚNICAMENTE si el caso "
     "corresponde a tu rol. Si no corresponde, deriva y no apliques ninguna de estas reglas."
@@ -54,7 +73,15 @@ _REGLA_INTEGRIDAD = (
     "que le corresponde invocar: normas aplicables, derechos que lo amparan, plazos legales, "
     "instancias ante las que puede presentar sus descargos y requisitos formales que debe cumplir "
     "según el Estatuto Docente, el Código del Trabajo, el RIOHS o la normativa que aplique al caso. "
-    "La redacción del documento es responsabilidad del propio interesado o de su representante."
+    "La redacción del documento es responsabilidad del propio interesado o de su representante.\n"
+    "4. ARTÍCULOS DE LEYES Y DECRETOS — PROHIBIDO INVENTAR CONTENIDO: Puedes mencionar el nombre y número "
+    "de una ley o decreto cuando sea normativa conocida (ej. 'Ley 20.536', 'Decreto 83', 'Estatuto Docente'). "
+    "Sin embargo, NUNCA atribuyas contenido específico a un artículo numerado a menos que ese contenido "
+    "esté presente en el contexto RAG o haya sido entregado por el usuario. "
+    "Si no puedes verificar el contenido exacto de un artículo, cita la ley en términos generales y agrega: "
+    "'El artículo específico debe verificarse en la fuente oficial.' "
+    "Esta regla aplica a todas las leyes: Estatuto Docente, Código del Trabajo, Ley 20.536, "
+    "Ley 19.968, Ley 21.013, Código Penal, y cualquier otra normativa."
 )
 
 _REGLA_RICE = (
@@ -338,7 +365,7 @@ class Command(BaseCommand):
             for role_code, cfg in ROLE_CONFIGS.items():
                 slug = f"{role_code.lower()}-{est_code.lower()}"
                 name = f"Asistente {cfg['label']} - {est_name}"
-                prompt = cfg['prompt_fn'](est_name)
+                prompt = _REGLA_URGENCIA + cfg['prompt_fn'](est_name)
 
                 assistant, created = AIAssistant.objects.get_or_create(
                     slug=slug,
@@ -366,15 +393,17 @@ class Command(BaseCommand):
                     skipped_count += 1
 
         # 2. Asistente RED (único, sin establecimiento)
+        red_defaults = {k: v for k, v in RED_ASSISTANT.items() if k != 'slug'}
+        red_defaults['system_instruction'] = _REGLA_URGENCIA + red_defaults['system_instruction']
         assistant, created = AIAssistant.objects.get_or_create(
             slug=RED_ASSISTANT['slug'],
-            defaults={k: v for k, v in RED_ASSISTANT.items() if k != 'slug'}
+            defaults=red_defaults
         )
         if created:
             self.stdout.write(self.style.SUCCESS(f"  [+] Creado:    {RED_ASSISTANT['slug']}"))
             created_count += 1
         elif update_prompts:
-            assistant.system_instruction = RED_ASSISTANT['system_instruction']
+            assistant.system_instruction = _REGLA_URGENCIA + RED_ASSISTANT['system_instruction']
             assistant.save(update_fields=['system_instruction'])
             self.stdout.write(self.style.WARNING(f"  [~] Prompt actualizado: {RED_ASSISTANT['slug']}"))
             updated_count += 1
