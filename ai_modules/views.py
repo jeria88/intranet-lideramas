@@ -562,6 +562,39 @@ def conversation_new(request, slug):
 
 
 @login_required
+def conversation_save_case(request, slug, conv_id):
+    """AJAX: guarda el último mensaje IA de la conversación como AICase."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error'}, status=400)
+
+    assistant = get_object_or_404(AIAssistant, slug=slug, is_active=True)
+    conversation = get_object_or_404(ChatConversation, pk=conv_id, user=request.user, assistant=assistant)
+
+    last_ai = conversation.messages.filter(role='assistant').last()
+    if not last_ai:
+        return JsonResponse({'status': 'error', 'message': 'Sin respuesta IA para guardar'}, status=400)
+
+    sustento, ruta, checklist = _extract_case_components(last_ai.content)
+    first_user = conversation.messages.filter(role='user').first()
+    title = conversation.title if conversation.title != 'Nueva conversación' else (first_user.content[:80] if first_user else 'Caso sin título')
+
+    case = AICase.objects.create(
+        user=request.user,
+        assistant=assistant,
+        title=title,
+        user_query=first_user.content if first_user else '',
+        sustento=sustento or last_ai.content,
+        ruta=ruta,
+        checklist=checklist,
+        status='abierto',
+    )
+    conversation.case = case
+    conversation.save(update_fields=['case'])
+
+    return JsonResponse({'status': 'success', 'case_id': case.pk})
+
+
+@login_required
 def conversation_detail(request, slug, conv_id):
     assistant = get_object_or_404(AIAssistant, slug=slug, is_active=True, is_chat_enabled=True)
     if not _check_assistant_access(request, assistant):

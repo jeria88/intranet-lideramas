@@ -101,7 +101,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 const CONV_URL = "{% url 'ai_modules:conversation_detail' slug=assistant.slug conv_id=conversation.pk %}";
-const CASE_URL = "{% url 'ai_modules:save_as_case' %}";
+const CASE_URL = "{% url 'ai_modules:conversation_save_case' slug=assistant.slug conv_id=conversation.pk %}";
 const CSRF = "{{ csrf_token }}";
 
 // Renderizar markdown en bubbles existentes
@@ -171,19 +171,13 @@ async function sendMessage() {
 }
 
 function guardarCaso() {
-    const lastAI = [...document.querySelectorAll('.message-row.ai .bubble')].pop();
-    if (!lastAI) { showToast('No hay respuesta de la IA para guardar.'); return; }
-
     const fd = new FormData();
     fd.append('csrfmiddlewaretoken', CSRF);
-    fd.append('slug', '{{ assistant.slug }}');
-    fd.append('ai_response', lastAI.innerText);
-
     fetch(CASE_URL, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
             if (d.status === 'success') showToast('✓ Caso guardado en el repositorio');
-            else showToast('Error al guardar el caso');
+            else showToast(d.message || 'Error al guardar el caso');
         })
         .catch(() => showToast('Error de conexión'));
 }

@@ -30,4 +30,5 @@ urlpatterns = [
     path('<slug:slug>/conversaciones/', views.conversation_list, name='conversation_list'),
     path('<slug:slug>/conversaciones/nueva/', views.conversation_new, name='conversation_new'),
     path('<slug:slug>/conversaciones/<int:conv_id>/', views.conversation_detail, name='conversation_detail'),
+    path('<slug:slug>/conversaciones/<int:conv_id>/guardar-caso/', views.conversation_save_case, name='conversation_save_case'),
 ]
