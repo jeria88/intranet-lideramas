@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AIAssistant, AIQuery, AIKnowledgeBase
+from .models import AIAssistant, AIQuery, AIKnowledgeBase, AICase, CaseObservation
 from .utils import index_knowledge_base_file
 
 
@@ -62,3 +62,20 @@ class AIQueryAdmin(admin.ModelAdmin):
     search_fields = ['question', 'answer', 'user__username']
     readonly_fields = ['submitted_at', 'deadline']
     ordering = ['deadline']
+
+
+class CaseObservationInline(admin.TabularInline):
+    model = CaseObservation
+    extra = 0
+    readonly_fields = ['user', 'content', 'created_at']
+    can_delete = False
+
+
+@admin.register(AICase)
+class AICaseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'user', 'assistant', 'status', 'created_at']
+    list_filter = ['status', 'assistant', 'is_active']
+    search_fields = ['title', 'user_query', 'user__username']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+    inlines = [CaseObservationInline]

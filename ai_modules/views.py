@@ -257,8 +257,15 @@ def ai_chat(request, slug):
                 content=ai_response
             )
 
-            # (El auto-guardado ahora se maneja exclusivamente en el frontend vía JS para evitar casos duplicados)
-            
+            # 5. Registrar la consulta en AIQuery para trazabilidad en el admin
+            AIQuery.objects.create(
+                user=request.user,
+                assistant=assistant,
+                question=user_message,
+                ai_suggestion=ai_response,
+                status='respondida',
+            )
+
             return JsonResponse({
                 'response': ai_response,
                 'status': 'success'
