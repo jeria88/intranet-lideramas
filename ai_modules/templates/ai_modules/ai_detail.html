@@ -164,7 +164,7 @@
         <img src="{% static 'img/' %}{{ assistant.image_name }}" alt="{{ assistant.name }}" class="assistant-photo">
         <div class="role-badge">{{ assistant.profile_role }}</div>
         {% if assistant.is_chat_enabled %}
-        <a href="{% url 'ai_modules:ai_chat' assistant.slug %}" target="_blank" class="btn-launch" style="background: linear-gradient(135deg, #5436DA, #4a2ec2); margin-bottom: 12px;">
+        <a href="{% url 'ai_modules:conversation_list' slug=assistant.slug %}" class="btn-launch" style="background: linear-gradient(135deg, #5436DA, #4a2ec2); margin-bottom: 12px;">
             💬 Entrar al Chat (Interno)
         </a>
         {% endif %}

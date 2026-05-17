@@ -48,7 +48,7 @@ def ai_list(request):
     ).order_by('-establishment').first() # Priorizar el que tiene establecimiento definido
     
     if assistant:
-        return redirect('ai_modules:ai_chat', slug=assistant.slug)
+        return redirect('ai_modules:conversation_list', slug=assistant.slug)
 
     # 4. Si no tiene asistente asignado, no mostrar nada más por seguridad
     return render(request, 'ai_modules/no_access.html')
