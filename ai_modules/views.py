@@ -17,10 +17,10 @@ def _extract_case_components(text):
     ruta = ""
     checklist = ""
     
-    # Buscar secciones usando Regex
-    a_match = re.search(r'#### A\) SUSTENTO NORMATIVO(.*?)(?=#### B|$)', text, re.DOTALL | re.IGNORECASE)
-    b_match = re.search(r'#### B\) PLAN DE ACCIÓN(.*?)(?=#### C|$)', text, re.DOTALL | re.IGNORECASE)
-    c_match = re.search(r'#### C\) CHECKLIST DE PROCESOS(.*?)$', text, re.DOTALL | re.IGNORECASE)
+    # Buscar secciones usando Regex — compatible con formato actual del prompt
+    a_match = re.search(r'(?:#### A\)|PASO 2[^*\n]*A[\.\-]+)\s*SUSTENTO NORMATIVO(.*?)(?=(?:#### B\)|PASO 3)|$)', text, re.DOTALL | re.IGNORECASE)
+    b_match = re.search(r'(?:#### B\)|PASO 3[^*\n]*B[\.\-]+)\s*PLAN DE ACCIÓN(.*?)(?=(?:#### C\)|PASO 4)|$)', text, re.DOTALL | re.IGNORECASE)
+    c_match = re.search(r'(?:#### C\)|PASO 4[^*\n]*C[\.\-]+)\s*CHECKLIST(.*?)$', text, re.DOTALL | re.IGNORECASE)
     
     if a_match: sustento = a_match.group(1).strip()
     if b_match: ruta = b_match.group(1).strip()
