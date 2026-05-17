@@ -9,6 +9,7 @@ from .services import call_deepseek_ai
 from .utils import extract_text_from_file
 from django.http import JsonResponse
 import re
+from django.db.models import Count
 
 
 def _extract_case_components(text):
@@ -541,7 +542,6 @@ def conversation_list(request, slug):
     if not _check_assistant_access(request, assistant):
         return render(request, 'ai_modules/no_access.html')
 
-    from django.db.models import Count
     conversations = ChatConversation.objects.filter(
         user=request.user, assistant=assistant
     ).annotate(message_count=Count('messages')).order_by('-updated_at')
@@ -634,8 +634,8 @@ def conversation_detail(request, slug, conv_id):
 
         return JsonResponse({'response': ai_response, 'status': 'success'})
 
-    messages = conversation.messages.all()
-    last_ai = messages.filter(role='assistant').last()
+    messages = list(conversation.messages.all())
+    last_ai = next((m for m in reversed(messages) if m.role == 'assistant'), None)
 
     return render(request, 'ai_modules/conversacion_detail.html', {
         'assistant': assistant,
