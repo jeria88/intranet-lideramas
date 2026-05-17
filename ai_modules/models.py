@@ -31,11 +31,21 @@ class AIAssistant(models.Model):
 
 
 class AIKnowledgeBase(models.Model):
+    NIVEL_CHOICES = [
+        ('institucional',  'Institucional (solo este colegio)'),
+        ('congregacional', 'Congregacional (toda la red SFA)'),
+        ('nacional',       'Nacional (normativa pública)'),
+    ]
+
     assistant = models.ForeignKey(
         AIAssistant, on_delete=models.CASCADE, related_name='knowledge_base'
     )
     name = models.CharField(max_length=255, verbose_name='Nombre del documento')
     file = models.FileField(upload_to='ai_knowledge/', verbose_name='Archivo PDF')
+    nivel = models.CharField(
+        max_length=20, choices=NIVEL_CHOICES, default='institucional',
+        verbose_name='Nivel de acceso'
+    )
     extracted_text = models.TextField(blank=True, verbose_name='Texto extraído')
     is_processed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

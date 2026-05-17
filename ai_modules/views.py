@@ -405,54 +405,34 @@ def toggle_case_status(request, pk):
 def generate_case_defense(request, pk):
     """Genera redacción de descargos para fiscalizadores externos."""
     case = get_object_or_404(AICase, pk=pk)
-    
-    import time
-    timestamp = int(time.time())
-    
-    # Prompt técnico y formal con inyección de variabilidad
-    system_prompt = f"""
-    Actúa como un experto en Normativa Educacional y Gestión Jurídica-Pedagógica de Chile. 
-    Tu misión es redactar un documento formal de DESCARGOS para ser presentado ante entes fiscalizadores.
-    
-    CRITICAL UNIQUE SEED: {case.pk}-{timestamp}
-    ESTILO DE REDACCIÓN: Rotar hacia un tono profundamente técnico y personalizado.
-    
-    INSTRUCCIONES DE VARIABILIDAD:
-    1. PROHIBIDO usar frases de plantilla como "en relación a lo consultado" o "se procede a informar".
-    2. Inicia el documento directamente con los hechos o la base legal.
-    3. Cada oración debe ser construida de forma única para este caso {case.pk}.
-    4. Si has redactado algo similar antes, CAMBIA totalmente los conectores y la estructura de los párrafos.
-    
-    ESTRUCTURA OBLIGATORIA: 
-    1. Antecedentes (Hechos específicos del caso)
-    2. Fundamentación Técnico-Normativa (Citas legales precisas)
-    3. Acciones de Mitigación/Corrección (Pasos realizados)
-    4. Conclusión y petitorio.
-    """
 
-    user_prompt = f"""
-    Genera los descargos institucionales para el siguiente caso:
-    ---
-    Título del Caso: {case.title}
-    Consulta Original (Hechos): {case.user_query}
-    Sustento Normativo: {case.sustento}
-    Ruta de Acción: {case.ruta}
-    ---
-    El documento debe estar listo para ser copiado y pegado en una minuta oficial.
-    """
-    
-    # Se debe incluir el user_prompt dentro del messages_history para que la IA lo lea
-    messages_for_ai = [
-        {'role': 'system', 'content': system_prompt},
-        {'role': 'user', 'content': user_prompt}
-    ]
-    
-    # Usamos temperatura máxima recomendada para redacción variada (1.3)
-    defense_text = call_deepseek_ai(case.assistant, messages_for_ai, user_prompt, temperature=1.3)
-    
+    user_prompt = f"""Redacta un documento formal de DESCARGOS para presentar ante entes fiscalizadores.
+
+Usa un tono formal y técnico. No uses frases de plantilla genéricas.
+
+ESTRUCTURA OBLIGATORIA:
+1. Antecedentes (Hechos específicos del caso)
+2. Fundamentación Técnico-Normativa (Citas legales precisas)
+3. Acciones de Mitigación/Corrección (Pasos realizados)
+4. Conclusión y petitorio
+
+---
+Título del Caso: {case.title}
+Consulta Original (Hechos): {case.user_query}
+Sustento Normativo: {case.sustento}
+Ruta de Acción: {case.ruta}
+---"""
+
+    defense_text = call_deepseek_ai(
+        case.assistant,
+        [{'role': 'user', 'content': user_prompt}],
+        user_prompt,
+        temperature=1.3
+    )
+
     case.descargos = defense_text
     case.save(update_fields=['descargos'])
-    
+
     return JsonResponse({'status': 'success', 'defense': defense_text})
 
 @login_required

@@ -9,7 +9,7 @@ def call_deepseek_ai(assistant, messages_history, user_query, temperature=1.0, a
     """
     api_key = getattr(settings, 'DEEPSEEK_API_KEY', None)
     base_url = getattr(settings, 'DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
-    
+
     if not api_key:
         return "Error: DEEPSEEK_API_KEY no configurado."
 
@@ -18,46 +18,53 @@ def call_deepseek_ai(assistant, messages_history, user_query, temperature=1.0, a
         relevant_context = get_relevant_chunks(assistant, user_query)
     except Exception as e:
         print(f"Error en RAG: {e}")
-        relevant_context = "Error al recuperar contexto legal. Procede con base en conocimientos generales pero advierte al usuario."
+        relevant_context = ""
 
-    # Bloque de adjunto si existe
-    attached_block = ""
+    # System message: ÚNICAMENTE el system_instruction editable desde el admin.
+    # No se agrega nada más aquí — el RAG y los adjuntos van en el mensaje del usuario.
+    system_instruction = assistant.system_instruction or "Eres un asesor experto en normativa educacional chilena vigente."
+    messages = [{"role": "system", "content": system_instruction}]
+
+    # Historial previo sin modificar (todos excepto el mensaje actual)
+    prior_history = messages_history[:-1] if len(messages_history) > 1 else []
+    current_message = messages_history[-1] if messages_history else {"role": "user", "content": user_query}
+
+    for msg in prior_history:
+        messages.append({"role": msg['role'], "content": msg['content']})
+
+    # Enriquecer el mensaje actual con adjunto y contexto documental
+    context_parts = []
     if attached_content:
-        attached_block = (
-            "\n\n### DOCUMENTO ADJUNTO POR EL USUARIO:\n"
-            "El usuario ha adjuntado un documento específico para esta consulta. Analiza su contenido con ALTA PRIORIDAD para responder:\n"
+        context_parts.append(
+            "### DOCUMENTO ADJUNTO POR EL USUARIO:\n"
             f"{attached_content}\n"
-            "--- FIN DEL DOCUMENTO ADJUNTO ---\n"
+            "--- FIN DEL DOCUMENTO ADJUNTO ---"
+        )
+    if relevant_context:
+        context_parts.append(
+            "### CONTEXTO DOCUMENTAL (RAG):\n"
+            f"{relevant_context}\n"
+            "--- FIN DEL CONTEXTO ---"
         )
 
-    # El system_instruction almacenado en BD es la fuente única de verdad del prompt.
-    # services.py solo agrega las partes dinámicas: RAG y adjuntos.
-    system_instruction = assistant.system_instruction or "Eres un asesor experto en normativa educacional chilena vigente."
-    full_system_prompt = (
-        f"{system_instruction}\n\n"
-        f"{attached_block}"
-        "### CONTEXTO DOCUMENTAL (RAG):\n"
-        f"{relevant_context}\n"
-        "--- FIN DEL CONTEXTO ---"
-    )
-    
-    messages = [{"role": "system", "content": full_system_prompt}]
-    
-    for msg in messages_history:
-        messages.append({"role": msg['role'], "content": msg['content']})
-    
+    if context_parts:
+        enriched_content = "\n\n".join(context_parts) + f"\n\n{current_message['content']}"
+    else:
+        enriched_content = current_message['content']
+
+    messages.append({"role": current_message['role'], "content": enriched_content})
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    
     payload = {
         "model": "deepseek-chat",
         "messages": messages,
         "temperature": temperature,
         "stream": False
     }
-    
+
     try:
         response = requests.post(
             f"{base_url}/chat/completions",

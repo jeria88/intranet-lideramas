@@ -127,6 +127,118 @@ def extract_text_from_file(file_obj):
     
     return ""
 
+def chunk_text(text, chunk_size=1000, overlap=150):
+    """Divide texto en fragmentos con overlap para el RAG."""
+    # Normalizar espacios y saltos de línea excesivos
+    import re
+    text = re.sub(r'\s+', ' ', text).strip()
+    if not text:
+        return []
+
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+        # Intentar cortar en punto o salto de párrafo para no partir palabras
+        if end < len(text):
+            cut = max(text.rfind('. ', start, end), text.rfind('\n', start, end))
+            if cut > start + chunk_size // 2:
+                end = cut + 1
+        chunk = text[start:end].strip()
+        if chunk:
+            chunks.append(chunk)
+        start = end - overlap
+        if start >= len(text):
+            break
+    return chunks
+
+
+def index_knowledge_base_file(kb_obj):
+    """
+    Pipeline completo: extrae texto → chunkea → genera embeddings → guarda en RAG.
+    Llama desde el admin o management commands.
+    Retorna (chunks_creados, error_msg). error_msg es None si todo fue OK.
+    """
+    import hashlib
+    from .models import AIKnowledgeChunk
+
+    # 1. Extraer texto
+    text = extract_text_from_file(kb_obj.file)
+    if not text.strip():
+        return 0, f"No se pudo extraer texto de '{kb_obj.name}'."
+
+    # 2. Chunkear
+    chunks_text = chunk_text(text)
+    if not chunks_text:
+        return 0, f"El documento '{kb_obj.name}' quedó vacío tras el chunking."
+
+    # 3. Metadatos inferidos del asistente
+    assistant = kb_obj.assistant
+    establecimiento = assistant.establishment.lower() if assistant.establishment else 'red'
+    rol = assistant.profile_role.lower()
+    nivel = kb_obj.nivel
+    doc_slug = hashlib.md5(kb_obj.name.encode()).hexdigest()[:8]
+
+    # 4. Eliminar chunks anteriores del mismo documento para este asistente
+    AIKnowledgeChunk.objects.using('knowledge_base').filter(
+        assistant_id=assistant.pk,
+        document_name=kb_obj.name,
+    ).delete()
+
+    # 5. Generar embeddings en lotes y guardar
+    embedding_fn = get_openai_embedding  # ya definida en este módulo
+    new_chunks = []
+    batch_size = 50
+
+    try:
+        import openai
+        from django.conf import settings as dj_settings
+        api_key_val = getattr(dj_settings, 'OPENAI_API_KEY', os.environ.get('OPENAI_API_KEY'))
+        if not api_key_val:
+            return 0, "OPENAI_API_KEY no configurada."
+        client = openai.OpenAI(api_key=api_key_val)
+
+        for i in range(0, len(chunks_text), batch_size):
+            batch = chunks_text[i:i + batch_size]
+            response = client.embeddings.create(input=batch, model="text-embedding-3-small")
+            for j, emb_data in enumerate(response.data):
+                idx = i + j
+                chunk_id = f"{assistant.slug}-{doc_slug}-{idx}"
+                new_chunks.append(AIKnowledgeChunk(
+                    assistant_id=assistant.pk,
+                    content=batch[j],
+                    metadata={
+                        'nivel':         nivel,
+                        'establecimiento': establecimiento,
+                        'rol':           rol,
+                        'fuente_archivo': kb_obj.name,
+                        'chunk_id':      chunk_id,
+                    },
+                    chunk_id=chunk_id,
+                    document_name=kb_obj.name,
+                    index=idx,
+                    embedding=emb_data.embedding,
+                ))
+    except Exception as e:
+        return 0, f"Error al generar embeddings: {e}"
+
+    if new_chunks:
+        AIKnowledgeChunk.objects.using('knowledge_base').bulk_create(
+            new_chunks, ignore_conflicts=True
+        )
+
+    # 6. Marcar como procesado y guardar texto extraído
+    kb_obj.extracted_text = text[:50000]  # límite para no saturar BD
+    kb_obj.is_processed = True
+    kb_obj.save(update_fields=['extracted_text', 'is_processed'])
+
+    # 7. Invalidar caché de vectores en memoria para este asistente
+    from .utils import _VECTOR_RESOURCES
+    _VECTOR_RESOURCES.pop(assistant.slug, None)
+
+    return len(new_chunks), None
+
+
 def process_knowledge_base_file(knowledge_base_obj):
     """Procesa un objeto AIKnowledgeBase, extrae su texto y actualiza el asistente."""
     if not knowledge_base_obj.file:

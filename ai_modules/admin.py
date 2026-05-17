@@ -1,12 +1,14 @@
 from django.contrib import admin
 from .models import AIAssistant, AIQuery, AIKnowledgeBase
-from .utils import process_knowledge_base_file
+from .utils import index_knowledge_base_file
+
 
 class AIKnowledgeBaseInline(admin.TabularInline):
     model = AIKnowledgeBase
     extra = 1
-    fields = ['name', 'file', 'is_processed']
+    fields = ['name', 'file', 'nivel', 'is_processed']
     readonly_fields = ['is_processed']
+
 
 @admin.register(AIAssistant)
 class AIAssistantAdmin(admin.ModelAdmin):
@@ -24,16 +26,34 @@ class AIAssistantAdmin(admin.ModelAdmin):
     )
     readonly_fields = ['context_text']
 
+
 @admin.register(AIKnowledgeBase)
 class AIKnowledgeBaseAdmin(admin.ModelAdmin):
-    list_display = ['name', 'assistant', 'is_processed', 'created_at']
-    actions = ['process_files']
+    list_display = ['name', 'assistant', 'nivel', 'is_processed', 'created_at']
+    list_filter = ['is_processed', 'nivel', 'assistant']
+    actions = ['index_in_rag']
 
-    def process_files(self, request, queryset):
-        for obj in queryset:
-            process_knowledge_base_file(obj)
-        self.message_user(request, f"Se han procesado {queryset.count()} archivos.")
-    process_files.short_description = "Procesar PDFs (Extraer texto)"
+    def index_in_rag(self, request, queryset):
+        total_chunks = 0
+        errors = []
+
+        for kb_obj in queryset:
+            chunks, error = index_knowledge_base_file(kb_obj)
+            if error:
+                errors.append(f"{kb_obj.name}: {error}")
+            else:
+                total_chunks += chunks
+
+        if total_chunks:
+            self.message_user(
+                request,
+                f"{total_chunks} chunks indexados correctamente en el RAG."
+            )
+        for err in errors:
+            self.message_user(request, err, level='error')
+
+    index_in_rag.short_description = "Indexar en RAG (genera embeddings y carga al vector store)"
+
 
 @admin.register(AIQuery)
 class AIQueryAdmin(admin.ModelAdmin):

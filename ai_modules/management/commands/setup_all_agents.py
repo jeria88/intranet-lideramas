@@ -69,21 +69,21 @@ class Command(BaseCommand):
         # Regla transversal obligatoria para todos los agentes
         regla_rice = (
             "\n\nREGLA OBLIGATORIA — APLICACIÓN DEL REGLAMENTO INTERNO DE CONVIVENCIA EDUCATIVA (RICE):\n"
-            "En la evaluación de pertinencia de cada consulta, si la situación planteada involucra conductas, "
-            "conflictos, faltas o situaciones que afecten la convivencia de la comunidad educativa, es OBLIGATORIO "
-            "que la respuesta incluya explícitamente qué señala el Reglamento Interno de Convivencia Educativa (RICE) "
-            "del establecimiento para ese caso: la tipificación de la falta (leve, grave, gravísima), el procedimiento "
-            "establecido (protocolos de actuación, plazos, responsables) y las medidas formativas o disciplinarias "
-            "que correspondan según el mismo reglamento. "
-            "Si el RICE específico del establecimiento no está disponible en el contexto, indica que el protocolo "
-            "de respuesta debe ajustarse al RICE institucional vigente y describe el marco general que debe contener "
-            "todo RICE según la Política Nacional de Convivencia Educativa y la Ley 20.536."
+            "Si la situación planteada involucra conductas, conflictos o faltas que afecten la convivencia, "
+            "la respuesta DEBE señalar qué corresponde según el RICE: tipificación de la falta "
+            "(leve, grave o gravísima), procedimiento, plazos, responsables y medidas formativas o disciplinarias.\n"
+            "PROHIBICIÓN ESTRICTA: NUNCA inventes ni supongas números de artículo del RICE. "
+            "Los artículos del RICE son propios de cada establecimiento y varían entre colegios. "
+            "Si el documento RICE no aparece en el contexto RAG disponible, debes indicar EXPLÍCITAMENTE: "
+            "'El artículo específico debe verificarse en el RICE vigente de su establecimiento.' "
+            "En ese caso, describe la tipificación y el procedimiento en términos generales según lo que "
+            "establece la Política Nacional de Convivencia Educativa y la Ley 20.536, "
+            "sin asignar numeración que no puedas verificar."
         )
 
-        # Formato unificado para todos los agentes
-        formato_salida = (
-            "\n\n### FORMATO DE RESPUESTA OBLIGATORIO (NO MODIFICAR SECCIONES):\n"
-            "A.- SUSTENTO NORMATIVO\n"
+        # Secciones A/B/C — se usan después de la tabla inicial
+        formato_abc = (
+            "\n\nA.- SUSTENTO NORMATIVO\n"
             "Texto argumentativo breve que respalde la decisión (Citas a Leyes, Reglamentos Internos, etc).\n\n"
             "B.- PLAN DE ACCIÓN OPERATIVO\n"
             "Plan estructurado paso a paso con medidas: a) Preventivas b) Formativas c) Reparatorias. Especifica responsables.\n\n"
@@ -104,6 +104,21 @@ class Command(BaseCommand):
                     "El bienestar superior del estudiante es tu prioridad transversal.\n"
                     "Jerarquía documental a respetar: PEI → Normativos Nacionales → Documentos Internos.\n"
                     "Marco de acción: Matrícula Eisenhower, Marco para la Buena Dirección y el Liderazgo Escolar (MBDLE) y PEI."
+                ),
+                'tabla_analisis': (
+                    "\n\n### FORMATO DE RESPUESTA OBLIGATORIO — COMPLETAR EN ESTE ORDEN EXACTO:\n\n"
+                    "**TABLA DE ANÁLISIS INICIAL** (es la PRIMERA PARTE de toda respuesta, sin excepción):\n\n"
+                    "| Campo | Detalle |\n"
+                    "|---|---|\n"
+                    "| **Resumen del caso** | [completar] |\n"
+                    "| **Urgencia/Importancia (1 bajo → 5 muy alto)** | [completar] |\n"
+                    "| **¿Corresponde al Director o debe derivar?** | [completar — especificar a quién si deriva] |\n"
+                    "| **Normativa vigente que regula/sanciona** | [completar] |\n"
+                    "| **Artículos RIOHS** | [completar — articulado con Representante Legal e Inspector General] |\n"
+                    "| **Artículos RICE** | [completar — derivación a Convivencia Educativa] |\n"
+                    "| **Protocolo RICE N°** | [completar o N/A] |\n"
+                    "| **Artículos Reglamento de Evaluación** | [completar — derivación a UTP] |\n"
+                    "| **Cómo abordar desde el PEI** | [completar] |\n"
                 )
             },
             {
@@ -119,6 +134,20 @@ class Command(BaseCommand):
                     "Jerarquía documental a respetar: PEI → Normativos Nacionales → Documentos Internos.\n"
                     "Leyes clave: Decreto 67, 83, 170, LGE (artículos aplicables), DFL-2, LIE, SEP.\n"
                     "Marco de acción: Marco para la Buena Enseñanza (MBE), MBDLE y PEI."
+                ),
+                'tabla_analisis': (
+                    "\n\n### FORMATO DE RESPUESTA OBLIGATORIO — COMPLETAR EN ESTE ORDEN EXACTO:\n\n"
+                    "**TABLA DE ANÁLISIS INICIAL** (es la PRIMERA PARTE de toda respuesta, sin excepción):\n\n"
+                    "| Campo | Detalle |\n"
+                    "|---|---|\n"
+                    "| **Resumen del caso** | [completar] |\n"
+                    "| **Urgencia/Importancia (1 bajo → 5 muy alto)** | [completar] |\n"
+                    "| **¿Corresponde a UTP o debe derivar?** | [completar — especificar a quién si deriva] |\n"
+                    "| **Normativa vigente que regula/sanciona** | [completar] |\n"
+                    "| **Artículos RIOHS** | [completar — deriva/articula con Director e Inspector General] |\n"
+                    "| **Artículos RICE** | [completar — derivación a Convivencia Educativa] |\n"
+                    "| **Artículos Reglamento de Evaluación** | [completar] |\n"
+                    "| **Cómo abordar desde el PEI** | [completar] |\n"
                 )
             },
             {
@@ -133,6 +162,23 @@ class Command(BaseCommand):
                     "El bienestar superior del estudiante es tu prioridad transversal.\n"
                     "Jerarquía documental a respetar: PEI → Normativos Nacionales → Documentos Internos.\n"
                     "Leyes clave: Ley 21809, Manual de Cuentas, Código del Trabajo, Estatuto Docente, DFL-2."
+                ),
+                'tabla_analisis': (
+                    "\n\n### FORMATO DE RESPUESTA OBLIGATORIO — COMPLETAR EN ESTE ORDEN EXACTO:\n\n"
+                    "**TABLA DE ANÁLISIS INICIAL** (es la PRIMERA PARTE de toda respuesta, sin excepción):\n\n"
+                    "| Campo | Detalle |\n"
+                    "|---|---|\n"
+                    "| **Resumen del caso** | [completar] |\n"
+                    "| **Urgencia/Importancia (1 bajo → 5 muy alto)** | [completar] |\n"
+                    "| **Categoría del caso** | [Compra / Caso laboral / Caso comunidad educativa] |\n"
+                    "| **Cómo proceder según Manual de Cuentas** | [completar o N/A] |\n"
+                    "| **¿Corresponde al Representante Legal o debe derivar?** | [completar — especificar a quién si deriva] |\n"
+                    "| **Normativa laboral que regula el caso** | [completar] |\n"
+                    "| **Normativa educativa que regula/sanciona** | [completar] |\n"
+                    "| **Artículos RIOHS** | [completar — articulado con Director e Inspector General] |\n"
+                    "| **Artículos RICE** | [completar — derivación a Convivencia Educativa] |\n"
+                    "| **Artículos Reglamento de Evaluación** | [completar — derivación a UTP] |\n"
+                    "| **Cómo abordar desde el PEI** | [completar] |\n"
                 )
             },
             {
@@ -148,6 +194,21 @@ class Command(BaseCommand):
                     "Jerarquía documental a respetar: PEI → Normativos Nacionales → Documentos Internos.\n"
                     "Marco de acción: RIOHS, Código del Trabajo, Estatuto Docente, debido proceso de investigación.\n"
                     "Enfoque: Proceso sumarial, medidas disciplinarias y derechos del funcionario."
+                ),
+                'tabla_analisis': (
+                    "\n\n### FORMATO DE RESPUESTA OBLIGATORIO — COMPLETAR EN ESTE ORDEN EXACTO:\n\n"
+                    "**TABLA DE ANÁLISIS INICIAL** (es la PRIMERA PARTE de toda respuesta, sin excepción):\n\n"
+                    "| Campo | Detalle |\n"
+                    "|---|---|\n"
+                    "| **Resumen del caso** | [completar] |\n"
+                    "| **Urgencia/Importancia (1 bajo → 5 muy alto)** | [completar] |\n"
+                    "| **¿Corresponde al Inspector General o debe derivar?** | [completar — especificar a quién si deriva] |\n"
+                    "| **Normativa vigente que regula/sanciona** | [completar] |\n"
+                    "| **Artículos RIOHS** | [completar — articulado con Director] |\n"
+                    "| **Artículos RICE** | [completar — articulado con Convivencia Educativa] |\n"
+                    "| **Protocolo RICE N°** | [completar o N/A] |\n"
+                    "| **Artículos Reglamento de Evaluación** | [completar — derivación a UTP] |\n"
+                    "| **Cómo abordar desde el PEI** | [completar] |\n"
                 )
             },
             {
@@ -163,6 +224,21 @@ class Command(BaseCommand):
                     "Jerarquía documental a respetar: PEI → Normativos Nacionales → Documentos Internos.\n"
                     "Marco (en orden): urgente/importante → lo inmediato/conflicto → preventivo → formativo → reparatorio.\n"
                     "Leyes clave: Ley 20536, Política Nacional de Convivencia Educativa, Protocolo de actuación."
+                ),
+                'tabla_analisis': (
+                    "\n\n### FORMATO DE RESPUESTA OBLIGATORIO — COMPLETAR EN ESTE ORDEN EXACTO:\n\n"
+                    "**TABLA DE ANÁLISIS INICIAL** (es la PRIMERA PARTE de toda respuesta, sin excepción):\n\n"
+                    "| Campo | Detalle |\n"
+                    "|---|---|\n"
+                    "| **Resumen del caso** | [completar] |\n"
+                    "| **Urgencia/Importancia (1 bajo → 5 muy alto)** | [completar] |\n"
+                    "| **¿Corresponde a Convivencia Educativa o debe derivar?** | [completar — especificar a quién si deriva] |\n"
+                    "| **Normativa vigente que regula/sanciona** | [completar] |\n"
+                    "| **Artículos RIOHS** | [completar] |\n"
+                    "| **Artículos RICE** | [completar si aplica] |\n"
+                    "| **Protocolo RICE N°** | [completar o N/A] |\n"
+                    "| **Artículos Reglamento de Evaluación** | [completar — derivación a UTP] |\n"
+                    "| **Cómo abordar desde el PEI** | [completar] |\n"
                 )
             },
             {
@@ -177,7 +253,7 @@ class Command(BaseCommand):
                     "El bienestar superior del estudiante y la comunidad educativa es tu prioridad transversal.\n"
                     "Jerarquía documental a respetar: PEI → Normativos Nacionales → Documentos Internos.\n"
                     "Marco de acción: Articulación de RED, metas institucionales, coordinación entre directivos, gestión congregacional."
-                )
+                ),
             }
         ]
 
@@ -200,10 +276,12 @@ class Command(BaseCommand):
                 assistant.establishment = ''
                 assistant.save(update_fields=['establishment'])
 
-            prompt_completo = conf['instruction'] + regla_diagnosticos + regla_conflictos + regla_integridad + regla_rice + formato_salida + disclaimer
+            tabla = conf.get('tabla_analisis', '')
+            prompt_completo = conf['instruction'] + regla_diagnosticos + regla_conflictos + regla_integridad + regla_rice + tabla + formato_abc + disclaimer
 
-            # Actualizar todos los agentes que tengan este rol (ej. utp y utp-temuco)
-            agentes_rol = AIAssistant.objects.filter(profile_role=conf['profile_role'])
+            # Solo actualiza agentes genéricos (sin establecimiento asignado).
+            # Los agentes específicos por establecimiento son gestionados por setup_all_establishments.
+            agentes_rol = AIAssistant.objects.filter(profile_role=conf['profile_role'], establishment='')
             for ag in agentes_rol:
                 # Correcciones terminológicas obligatorias
                 if 'Convivencia Escolar' in ag.name:
