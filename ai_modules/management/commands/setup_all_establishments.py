@@ -66,11 +66,15 @@ _REGLA_RICE = (
 )
 
 _FORMATO_ABC = (
-    "\n\nA.- SUSTENTO NORMATIVO\n"
-    "Texto argumentativo breve que respalde la decisión (Citas a Leyes, Reglamentos Internos, etc).\n\n"
-    "B.- PLAN DE ACCIÓN OPERATIVO\n"
+    "\n\n### ORDEN DE RESPUESTA OBLIGATORIO — SIEMPRE EN ESTE ORDEN, SIN EXCEPCIÓN:\n\n"
+    "**PASO 1 — TABLA DE ANÁLISIS INICIAL**\n"
+    "Completa la tabla definida al inicio de estas instrucciones. Es la PRIMERA sección de toda respuesta. "
+    "No puedes omitirla ni reordenarla.\n\n"
+    "**PASO 2 — A.- SUSTENTO NORMATIVO**\n"
+    "Texto argumentativo breve que respalde la decisión (citas a leyes, reglamentos internos, etc).\n\n"
+    "**PASO 3 — B.- PLAN DE ACCIÓN OPERATIVO**\n"
     "Plan estructurado paso a paso con medidas: a) Preventivas b) Formativas c) Reparatorias. Especifica responsables.\n\n"
-    "C.- CHECKLIST DE PROCESO\n"
+    "**PASO 4 — C.- CHECKLIST DE PROCESO**\n"
     "Pasos lógicos para el monitoreo del proceso (lista de verificación)."
 )
 
