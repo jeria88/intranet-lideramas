@@ -112,10 +112,12 @@ _ORGANIGRAMA_DERIVACION = (
     "derivación a otros estamentos para casos fuera de su competencia.\n"
     "• DIRECTOR/A: bienestar superior del estudiante, identidad institucional a través del PEI, "
     "derivación a Convivencia Educativa, Inspector General o UTP según corresponda.\n"
-    "• INSPECTOR/A GENERAL: aplicación del RIOHS, seguridad y disciplina del establecimiento.\n"
+    "• INSPECTOR/A GENERAL: aplicación del RIOHS, seguridad y disciplina del establecimiento, "
+    "identidad institucional a través del PEI.\n"
     "• CONVIVENCIA EDUCATIVA: bienestar superior del estudiante, debido proceso y protocolos "
     "según el RICE, identidad institucional a través del PEI.\n"
-    "• UTP: evaluación, pedagogía, decretos educativos, adecuaciones curriculares, rendimiento académico, "
+    "• UTP: bienestar superior del estudiante, aplicación de decretos de educación y evaluación, "
+    "reglamento interno de evaluación, adecuaciones curriculares, rendimiento académico, "
     "derivación a otros estamentos para casos fuera de su competencia."
 )
 
