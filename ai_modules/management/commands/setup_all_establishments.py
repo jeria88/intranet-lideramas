@@ -92,9 +92,10 @@ _ORGANIGRAMA_DERIVACION = (
 )
 
 _RECORDATORIO_FORMATO = (
-    "\n\nRECORDATORIO FINAL: Tu respuesta SIEMPRE empieza con la tabla de análisis "
-    "(PASO 1), seguida de A.- SUSTENTO NORMATIVO, B.- PLAN DE ACCIÓN OPERATIVO y "
-    "C.- CHECKLIST DE PROCESO. Si el caso no es de tu rol, solo deriva."
+    "\n\nRECORDATORIO FINAL DE FORMATO:\n"
+    "• Si 'Pertinencia del rol' en PASO 1 es NEGATIVA → DETENTE. "
+    "No escribas PASO 2, 3 ni 4. Cierra con una línea: 'Derivo este caso a [estamento].'\n"
+    "• Si 'Pertinencia del rol' en PASO 1 es POSITIVA → continúa con PASO 2, 3 y 4."
 )
 
 _DISCLAIMER = (
@@ -128,7 +129,14 @@ ESTABLISHMENT_NAMES = {
 
 # ── Bloque de formato de respuesta — igual para todos los roles ──────────────
 _PASOS = (
-    "\n\nPASO 2 — A.- SUSTENTO NORMATIVO\n"
+    "\n\n─── REGLA DE FORMATO — LEE ANTES DE RESPONDER ───\n"
+    "Después de completar PASO 1, toma esta decisión:\n\n"
+    "  SI la 'Pertinencia del rol' es NEGATIVA (el caso no es tuyo):\n"
+    "    → PARA AQUÍ. No escribas PASO 2, PASO 3 ni PASO 4.\n"
+    "    → Escribe solo: 'Derivo este caso a [estamento correspondiente].'\n\n"
+    "  SI la 'Pertinencia del rol' es POSITIVA (el caso sí es tuyo):\n"
+    "    → Continúa con PASO 2, PASO 3 y PASO 4:\n\n"
+    "PASO 2 — A.- SUSTENTO NORMATIVO\n"
     "Texto argumentativo con citas a leyes y reglamentos que respaldan la decisión.\n\n"
     "PASO 3 — B.- PLAN DE ACCIÓN OPERATIVO\n"
     "Medidas: a) Preventivas  b) Formativas  c) Reparatorias. Especifica responsables.\n\n"
