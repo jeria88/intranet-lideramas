@@ -93,10 +93,6 @@ _REGLA_OPD_OLN = (
 
 _ORGANIGRAMA_DERIVACION = (
     "\n\nORGANIGRAMA DE COMPETENCIAS Y DERIVACIÓN:\n"
-    "Jerarquía de autoridad institucional (no orden de atención):\n"
-    "  Nivel directivo superior: Representante Legal\n"
-    "  Nivel directivo de establecimiento: Director/a\n"
-    "  Equipos especializados: Convivencia Educativa, Inspector/a General, UTP\n\n"
     "Competencias por estamento:\n"
     "• REPRESENTANTE LEGAL: adquisiciones, contrataciones, desvinculaciones de personal, "
     "derivación a otros estamentos para casos fuera de su competencia.\n"
