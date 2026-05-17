@@ -2,4 +2,4 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python manage.py migrate && python manage.py activate_all_users && python manage.py setup_all_establishments && python manage.py seed_simce_curriculum && python manage.py collectstatic --noinput && gunicorn config.wsgi --workers 1 --timeout 300 --log-file -"
+startCommand = "python manage.py migrate && python manage.py activate_all_users && python manage.py setup_all_establishments --update-prompts && python manage.py seed_simce_curriculum && python manage.py collectstatic --noinput && gunicorn config.wsgi --workers 1 --timeout 300 --log-file -"
