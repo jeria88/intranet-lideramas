@@ -8,6 +8,7 @@
     .site-header, .main-navigation, #anci-seal, #anci-modal, footer { display: none !important; }
     html, body { height: 100% !important; overflow: hidden !important; margin: 0; padding: 0; background: #0f172a !important; }
     body { display: flex; align-items: center; justify-content: center; }
+    .container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; width: 100% !important; height: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-direction: row !important; }
 
     /* ── App shell ── */
     .chat-app {
@@ -167,7 +168,7 @@
                 Volver
             </a>
             <div class="sidebar-assistant">{{ assistant.name }}</div>
-            <form method="post" action="{% url 'ai_modules:conversation_new' slug=assistant.slug %}">
+            <form method="post" action="{% url 'ai_modules:conversation_new' slug=assistant.slug %}" onsubmit="this.querySelector('button').disabled=true">
                 {% csrf_token %}
                 <button type="submit" class="btn-nueva-conv">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>

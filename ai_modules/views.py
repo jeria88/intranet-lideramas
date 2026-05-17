@@ -641,7 +641,6 @@ def conversation_detail(request, slug, conv_id):
         return JsonResponse({'response': ai_response, 'status': 'success', 'new_title': new_title})
 
     messages = list(conversation.messages.all())
-    last_ai = next((m for m in reversed(messages) if m.role == 'assistant'), None)
     all_conversations = ChatConversation.objects.filter(
         user=request.user, assistant=assistant
     ).order_by('-updated_at')
@@ -650,6 +649,5 @@ def conversation_detail(request, slug, conv_id):
         'assistant': assistant,
         'conversation': conversation,
         'chat_messages': messages,
-        'last_ai_response': last_ai.content if last_ai else None,
         'all_conversations': all_conversations,
     })
