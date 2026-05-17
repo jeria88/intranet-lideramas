@@ -25,4 +25,9 @@ urlpatterns = [
     path('<slug:slug>/consultar/', views.nueva_consulta, name='nueva_consulta'),
     path('<slug:slug>/chat/', views.ai_chat, name='ai_chat'),
     path('<slug:slug>/repositorio/', views.case_repository, name='case_repository'),
+
+    # Gestión de conversaciones (nueva interfaz)
+    path('<slug:slug>/conversaciones/', views.conversation_list, name='conversation_list'),
+    path('<slug:slug>/conversaciones/nueva/', views.conversation_new, name='conversation_new'),
+    path('<slug:slug>/conversaciones/<int:conv_id>/', views.conversation_detail, name='conversation_detail'),
 ]

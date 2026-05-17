@@ -182,6 +182,37 @@ class AICase(models.Model):
     def __str__(self):
         return f"[{self.get_status_display()}] {self.title} - {self.user.username}"
 
+class ChatConversation(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='conversations')
+    assistant = models.ForeignKey(AIAssistant, on_delete=models.CASCADE, related_name='conversations')
+    title = models.CharField(max_length=200, default='Nueva conversación')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    case = models.ForeignKey('AICase', on_delete=models.SET_NULL, null=True, blank=True, related_name='conversations')
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'Conversación'
+        verbose_name_plural = 'Conversaciones'
+
+    def __str__(self):
+        return f"{self.user.username} — {self.title}"
+
+
+class ConversationMessage(models.Model):
+    ROLE_CHOICES = [('user', 'Usuario'), ('assistant', 'IA')]
+    conversation = models.ForeignKey(ChatConversation, on_delete=models.CASCADE, related_name='messages')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.conversation.id} [{self.role}] {self.content[:40]}"
+
+
 class CaseObservation(models.Model):
     """Log cronológico de observaciones para un caso."""
     case = models.ForeignKey(AICase, on_delete=models.CASCADE, related_name='obs_log')

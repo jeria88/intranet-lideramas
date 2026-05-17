@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Conversaciones — {{ assistant.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .conv-page { max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    .conv-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .conv-header h1 { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; }
+    .btn-nueva {
+        background: #1e73be; color: #fff; border: none; padding: 10px 22px;
+        border-radius: 25px; font-weight: 700; font-size: 14px; cursor: pointer;
+        text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+        transition: background .2s;
+    }
+    .btn-nueva:hover { background: #165a94; color: #fff; }
+    .conv-empty { text-align: center; color: #94a3b8; padding: 60px 0; font-size: 16px; }
+    .conv-list { display: flex; flex-direction: column; gap: 10px; }
+    .conv-card {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 16px 20px; text-decoration: none; color: inherit;
+        display: flex; justify-content: space-between; align-items: center;
+        transition: box-shadow .15s, border-color .15s;
+    }
+    .conv-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); border-color: #1e73be; color: inherit; }
+    .conv-title { font-weight: 600; font-size: 15px; color: #1e293b; margin-bottom: 4px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 520px; }
+    .conv-date { font-size: 12px; color: #94a3b8; }
+    .conv-badge { background: #f1f5f9; color: #64748b; font-size: 12px; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+    .assistant-tag { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="conv-page">
+    <div class="conv-header">
+        <div>
+            <div class="assistant-tag">{{ assistant.name }}</div>
+            <h1>Conversaciones</h1>
+        </div>
+        <a href="{% url 'ai_modules:conversation_new' slug=assistant.slug %}" class="btn-nueva">
+            + Nueva conversación
+        </a>
+    </div>
+
+    {% if conversations %}
+        <div class="conv-list">
+            {% for conv in conversations %}
+            <a href="{% url 'ai_modules:conversation_detail' slug=assistant.slug conv_id=conv.pk %}" class="conv-card">
+                <div style="overflow:hidden; flex:1;">
+                    <div class="conv-title">{{ conv.title }}</div>
+                    <div class="conv-date">{{ conv.updated_at|date:"d/m/Y H:i" }}</div>
+                </div>
+                <div class="conv-badge">
+                    {{ conv.messages.count }} mensaje{{ conv.messages.count|pluralize }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="conv-empty">
+            <p>Aún no hay conversaciones.<br>Inicia una nueva para comenzar.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

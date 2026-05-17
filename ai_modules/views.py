@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
-from .models import AIAssistant, AIQuery, AIChatMessage, AICase, CaseObservation
+from .models import AIAssistant, AIQuery, AIChatMessage, AICase, CaseObservation, ChatConversation, ConversationMessage
 from notifications.models import Notification
 from .forms import AIQueryForm
 from .services import call_deepseek_ai
@@ -516,9 +516,90 @@ def soft_delete_case(request, pk):
     case = get_object_or_404(AICase, pk=pk)
     if not request.user.is_staff and case.user != request.user:
         return JsonResponse({'status': 'error', 'message': 'No tienes permiso'}, status=403)
-        
+
     if request.method == 'POST':
         case.is_active = False
         case.save(update_fields=['is_active'])
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)
+
+
+# ── Gestión de conversaciones ────────────────────────────────────────────────
+
+def _check_assistant_access(request, assistant):
+    if request.user.is_staff:
+        return True
+    return (
+        request.user.role == assistant.profile_role
+        and (not assistant.establishment or assistant.establishment == request.user.establishment)
+    )
+
+
+@login_required
+def conversation_list(request, slug):
+    assistant = get_object_or_404(AIAssistant, slug=slug, is_active=True, is_chat_enabled=True)
+    if not _check_assistant_access(request, assistant):
+        return render(request, 'ai_modules/no_access.html')
+
+    conversations = ChatConversation.objects.filter(
+        user=request.user, assistant=assistant
+    ).order_by('-updated_at')
+
+    return render(request, 'ai_modules/conversaciones_list.html', {
+        'assistant': assistant,
+        'conversations': conversations,
+    })
+
+
+@login_required
+def conversation_new(request, slug):
+    assistant = get_object_or_404(AIAssistant, slug=slug, is_active=True, is_chat_enabled=True)
+    if not _check_assistant_access(request, assistant):
+        return render(request, 'ai_modules/no_access.html')
+
+    conv = ChatConversation.objects.create(user=request.user, assistant=assistant)
+    return redirect('ai_modules:conversation_detail', slug=slug, conv_id=conv.pk)
+
+
+@login_required
+def conversation_detail(request, slug, conv_id):
+    assistant = get_object_or_404(AIAssistant, slug=slug, is_active=True, is_chat_enabled=True)
+    if not _check_assistant_access(request, assistant):
+        return render(request, 'ai_modules/no_access.html')
+
+    conversation = get_object_or_404(ChatConversation, pk=conv_id, user=request.user, assistant=assistant)
+
+    if request.method == 'POST':
+        user_message = request.POST.get('message', '').strip()
+        if not user_message:
+            return JsonResponse({'error': 'Mensaje vacío'}, status=400)
+
+        ConversationMessage.objects.create(conversation=conversation, role='user', content=user_message)
+
+        # Actualizar título con el primer mensaje
+        if conversation.title == 'Nueva conversación':
+            conversation.title = user_message[:80]
+            conversation.save(update_fields=['title', 'updated_at'])
+
+        history = [{'role': m.role, 'content': m.content} for m in conversation.messages.all()]
+
+        attached_text = ""
+        for f in request.FILES.getlist('attachment'):
+            attached_text += extract_text_from_file(f) + "\n\n"
+
+        ai_response = call_deepseek_ai(assistant, history, user_message, attached_content=attached_text)
+
+        ConversationMessage.objects.create(conversation=conversation, role='assistant', content=ai_response)
+        conversation.save(update_fields=['updated_at'])
+
+        return JsonResponse({'response': ai_response, 'status': 'success'})
+
+    messages = conversation.messages.all()
+    last_ai = messages.filter(role='assistant').last()
+
+    return render(request, 'ai_modules/conversacion_detail.html', {
+        'assistant': assistant,
+        'conversation': conversation,
+        'chat_messages': messages,
+        'last_ai_response': last_ai.content if last_ai else None,
+    })

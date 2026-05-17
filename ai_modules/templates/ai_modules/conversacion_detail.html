@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ conversation.title }} — {{ assistant.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .site-header, .main-navigation, #anci-seal, #anci-modal, footer { display: none !important; }
+    html, body { height: 100% !important; overflow: hidden !important; margin: 0; padding: 0; background: #f1f5f9 !important; }
+    body { display: flex; align-items: center; justify-content: center; }
+    .container { width: 90% !important; max-width: 100% !important; height: 90% !important; max-height: 90% !important; padding: 0 !important; margin: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; background: #fff !important; border-radius: 16px !important; box-shadow: 0 10px 40px rgba(0,0,0,.1) !important; box-sizing: border-box !important; }
+
+    .chat-header { flex-shrink: 0; border-bottom: 1px solid #e2e8f0; background: #fff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .chat-header-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+    .btn-back { color: #64748b; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; border: 1px solid #e2e8f0; background: #f8fafc; white-space: nowrap; }
+    .btn-back:hover { background: #e2e8f0; color: #1e293b; }
+    .conv-title-header { font-weight: 700; font-size: 15px; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .assistant-name { font-size: 12px; color: #94a3b8; }
+
+    #chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 24px; gap: 18px; background: #fff; font-size: 15px; }
+    .message-row { display: flex; width: 100%; }
+    .message-row.user { justify-content: flex-end; }
+    .message-row.ai { justify-content: flex-start; }
+    .bubble { max-width: 80%; padding: 12px 18px; border-radius: 16px; line-height: 1.6; }
+    .user .bubble { background: #e0f2fe; color: #0369a1; border-bottom-right-radius: 4px; }
+    .ai .bubble { background: #fff; color: #334155; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
+    .ai .bubble table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; }
+    .ai .bubble th, .ai .bubble td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }
+    .ai .bubble th { background: #f8fafc; font-weight: 700; }
+    .ai .bubble h3, .ai .bubble h4 { margin: 14px 0 6px; color: #1e293b; }
+    .ai .bubble ul, .ai .bubble ol { padding-left: 20px; }
+    .ai .bubble code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+    .chat-input-area { flex-shrink: 0; padding: 16px 20px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 10px; }
+    .input-row { display: flex; gap: 10px; align-items: flex-end; }
+    #message-input { flex: 1; padding: 10px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; resize: none; min-height: 44px; max-height: 140px; overflow-y: auto; line-height: 1.5; transition: border-color .2s; }
+    #message-input:focus { outline: none; border-color: #1e73be; }
+    #send-btn { background: #1e73be; color: #fff; border: none; padding: 10px 22px; border-radius: 25px; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .2s; white-space: nowrap; }
+    #send-btn:hover { background: #165a94; }
+    #send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-guardar-caso { background: #fff; color: #1e73be; border: 1.5px solid #1e73be; padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .btn-guardar-caso:hover { background: #1e73be; color: #fff; }
+
+    .typing-indicator { display: none; padding: 10px 18px; }
+    .typing-indicator span { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; margin: 0 2px; animation: bounce .9s infinite; }
+    .typing-indicator span:nth-child(2) { animation-delay: .2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity .3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="chat-header">
+        <div class="chat-header-left">
+            <a href="{% url 'ai_modules:conversation_list' slug=assistant.slug %}" class="btn-back">← Conversaciones</a>
+            <div>
+                <div class="conv-title-header">{{ conversation.title }}</div>
+                <div class="assistant-name">{{ assistant.name }}</div>
+            </div>
+        </div>
+        <button class="btn-guardar-caso" onclick="guardarCaso()">Guardar como caso</button>
+    </div>
+
+    <div id="chat-messages">
+        {% for msg in chat_messages %}
+        <div class="message-row {% if msg.role == 'user' %}user{% else %}ai{% endif %}">
+            <div class="bubble" {% if msg.role == 'assistant' %}id="bubble-{{ msg.pk }}"{% endif %}>
+                {% if msg.role == 'assistant' %}
+                    <div class="md-content">{{ msg.content }}</div>
+                {% else %}
+                    {{ msg.content }}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        <div class="typing-indicator ai" id="typing">
+            <div class="bubble" style="border:none;background:#f8fafc;">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <div class="input-row">
+            <textarea id="message-input" placeholder="Escribe tu consulta..." rows="1"></textarea>
+            <button id="send-btn" onclick="sendMessage()">
+                Enviar
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+const CONV_URL = "{% url 'ai_modules:conversation_detail' slug=assistant.slug conv_id=conversation.pk %}";
+const CASE_URL = "{% url 'ai_modules:save_as_case' %}";
+const CSRF = "{{ csrf_token }}";
+
+// Renderizar markdown en bubbles existentes
+document.querySelectorAll('.md-content').forEach(el => {
+    el.innerHTML = marked.parse(el.textContent);
+});
+
+function scrollBottom() {
+    const c = document.getElementById('chat-messages');
+    c.scrollTop = c.scrollHeight;
+}
+scrollBottom();
+
+// Auto-resize textarea
+const input = document.getElementById('message-input');
+input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+});
+input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function addBubble(role, content) {
+    const msgs = document.getElementById('chat-messages');
+    const row = document.createElement('div');
+    row.className = `message-row ${role === 'user' ? 'user' : 'ai'}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    if (role === 'assistant') {
+        bubble.innerHTML = marked.parse(content);
+    } else {
+        bubble.textContent = content;
+    }
+    row.appendChild(bubble);
+    msgs.insertBefore(row, document.getElementById('typing'));
+    scrollBottom();
+    return bubble;
+}
+
+async function sendMessage() {
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('send-btn').disabled = true;
+
+    addBubble('user', msg);
+    document.getElementById('typing').style.display = 'flex';
+    scrollBottom();
+
+    const fd = new FormData();
+    fd.append('message', msg);
+    fd.append('csrfmiddlewaretoken', CSRF);
+
+    try {
+        const res = await fetch(CONV_URL, { method: 'POST', body: fd });
+        const data = await res.json();
+        document.getElementById('typing').style.display = 'none';
+        addBubble('assistant', data.response);
+    } catch(e) {
+        document.getElementById('typing').style.display = 'none';
+        addBubble('assistant', 'Error al conectar con el servidor.');
+    }
+    document.getElementById('send-btn').disabled = false;
+}
+
+function guardarCaso() {
+    const lastAI = [...document.querySelectorAll('.message-row.ai .bubble')].pop();
+    if (!lastAI) { showToast('No hay respuesta de la IA para guardar.'); return; }
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('slug', '{{ assistant.slug }}');
+    fd.append('ai_response', lastAI.innerText);
+
+    fetch(CASE_URL, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'success') showToast('✓ Caso guardado en el repositorio');
+            else showToast('Error al guardar el caso');
+        })
+        .catch(() => showToast('Error de conexión'));
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+{% endblock %}
