@@ -33,7 +33,7 @@ class Command(BaseCommand):
             return
 
         try:
-            assistant = AIAssistant.objects.get(slug=assistant_slug)
+            assistant = AIAssistant.objects.using('knowledge_base').get(slug=assistant_slug)
         except AIAssistant.DoesNotExist:
             self.stdout.write(self.style.ERROR(f'No existe el asistente: {assistant_slug}'))
             return
