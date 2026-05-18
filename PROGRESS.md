@@ -1,77 +1,80 @@
 # PROGRESS.md — Guía de continuación para cualquier IA
 
-> **Actualizado:** 2026-05-11 · Últimos commits: `4c4498e` (nueva arquitectura SIMCE) → `e01e3f5` (fix migración) → `b94ad21` (CRUD biblioteca)
+> **Actualizado:** 2026-05-17 · Últimos commits: `cab9684` (_REGLA_TOPICO) → `187e73d` (feedback pilotaje) → `2e8a93f` (nav dashboard) → `22bcfc8` (fixes prompts art+inspector)
 > Leer esto ANTES de hacer cualquier cambio al código.
 
 ---
 
 ## 🏗️ Arquitectura General
 
-Intranet escolar chilena (Red SFA — múltiples establecimientos) desplegada en **Railway** + **GitHub Actions**.
+Intranet escolar chilena (Red SFA — 8 establecimientos) desplegada en **Railway** + **GitHub Actions**.
 - Stack: **Django / Python 3.12 / PostgreSQL (Railway) / Cloudflare R2 / Daily.co / OpenAI / DeepSeek**
 - Restricción crítica: servidor <4 GB RAM → sin numpy, sin pgvector; embeddings como JSONField
-- Roles de usuario: `DIRECTOR`, `UTP`, `INSPECTOR`, `CONVIVENCIA`, `REPRESENTANTE`, `RED` (superusuario de red)
+- Roles de usuario: `DIRECTOR`, `UTP`, `INSPECTOR`, `CONVIVENCIA`, `REPRESENTANTE`, `RED`
 - Establecimientos: `TEMUCO`, `ANGOL`, `ARAUCO`, `IMPERIAL`, `LAUTARO`, `ERCILLA`, `SANTIAGO`, `RENAICO`
-- **Demo MVP: 15 de mayo 2026**
+- Deploy: push a `main` → Railway corre Procfile automáticamente (migrate + setup_all_establishments + collectstatic)
 
 ---
 
-## 🚧 MÓDULO EN CURSO: SIMCE (`simce/`)
+## ✅ MÓDULO COMPLETADO: Asistentes IA (`ai_modules/`)
 
-### Arquitectura nueva (migración 0005 — pendiente de aplicar en Railway)
+### Estado actual
+- **41 asistentes** activos: 5 roles × 8 establecimientos + 1 RED
+- **Sistema de conversaciones** estilo ChatGPT: sidebar con historial + panel de chat unificado (`chat_app.html`)
+- **Prompts gestionados** por `setup_all_establishments.py` — fuente única de verdad, actualiza en cada deploy con `--update-prompts`
 
-La migración `0005_nueva_arquitectura.py` transforma completamente el módulo:
+### Arquitectura de prompts (orden de inyección)
+```
+_REGLA_URGENCIA          ← primero siempre (gate 🚨 denuncia obligatoria)
+prompt_rol(est_name)     ← tabla PASO 1 + competencias del estamento
+_PASOS                   ← IF NO → para / IF SÍ → continúa PASO 2-4
+_META_REGLA
+_REGLA_TOPICO            ← rechaza consultas fuera del dominio escolar
+_REGLA_DIAGNOSTICOS
+_REGLA_CONFLICTOS
+_REGLA_INTEGRIDAD        ← prohíbe citar artículos con contenido sin RAG
+_REGLA_RICE
+_REGLA_OPD_OLN
+_ORGANIGRAMA_DERIVACION
+_RECORDATORIO_FORMATO
+_DISCLAIMER
+```
 
-| Modelo nuevo | Rol |
+### Vulnerabilidades resueltas (resultado test piloto UTP)
+| Vulnerabilidad | Fix aplicado |
 |---|---|
-| `TextoBiblioteca` | Texto independiente, reutilizable en múltiples pruebas |
-| `PreguntaBanco` + `AlternativaBanco` | Preguntas reutilizables asociadas a un texto |
-| `PruebaTexto` | Junction: Prueba ↔ TextoBiblioteca, con n_nivel1/2/3 por texto |
-| `SimceDocumento` + `SimceChunk` | RAG con embeddings en JSONField (puro Python) |
+| Urgencia no disparaba | `_REGLA_URGENCIA` inyectada al inicio (primacy) |
+| Rol incorrecto continuaba PASO 2-4 | `_PASOS` con IF/ELSE explícito |
+| Inspector tomaba casos de UTP | `prompt_inspector` con sección NO COMPETENCIA explícita |
+| Artículos laborales inventados (CT, ED) | `_REGLA_INTEGRIDAD` item 4 con lista de artículos prohibidos |
+| Consultas off-topic (recetas, etc.) | `_REGLA_TOPICO` con mensaje de rechazo fijo |
+| Contaminación de historial | No ocurrió en test (sistema ok) |
 
-### Flujo admin completo
+### Modelos de conversación
+```python
+ChatConversation: user, assistant, title, created_at, updated_at, case(FK)
+ConversationMessage: conversation, role (user/assistant), content, timestamp
+PilotFeedback: user, origin (banner/respuesta_ia), message(FK nullable), feedback_text, created_at
 ```
-Biblioteca → generar/crear textos → revisar/aprobar textos
-→ "Crear test desde biblioteca" → selecciona textos aprobados → configura preguntas por nivel
-→ lanzar generación de preguntas → revisión final → aprobar → publicar
-```
 
-### Dos modos para estudiantes
-- **Modo SIMCE**: form clásico, se entrega todo junto al final
-- **Modo Pistas**: AJAX por pregunta, puntaje 4-3-2-0 según intentos
+### Vistas de conversación
+| Vista | URL | Descripción |
+|-------|-----|-------------|
+| `conversation_list` | `/<slug>/conversaciones/` | Redirige a última conv o muestra empty state |
+| `conversation_new` | `/<slug>/conversaciones/nueva/` | Crea nueva conv y redirige |
+| `conversation_detail` | `/<slug>/conversaciones/<id>/` | GET: carga chat; POST: envía mensaje, retorna `response + message_id + new_title` |
+| `submit_pilot_feedback` | `/feedback/piloto/` | POST — guarda PilotFeedback |
 
-### Archivos clave
-| Archivo | Estado |
-|---------|--------|
-| `simce/models.py` | ✅ Reescrito — nuevos modelos + ESTADO_PRUEBA completo |
-| `simce/migrations/0005_nueva_arquitectura.py` | ✅ Incluye SET CONSTRAINTS ALL IMMEDIATE (fix trigger) |
-| `simce/generator.py` | ✅ Reescrito — generar_texto_biblioteca, generar_preguntas_banco, poblar_preguntas_prueba_texto |
-| `simce/views.py` | ✅ Reescrito — CRUD completo biblioteca + banco + pruebas |
-| `simce/urls.py` | ✅ Actualizado con todas las rutas nuevas |
-| `simce/rag.py` | ✅ Nuevo — RAG puro Python con cosine similarity |
-| `simce/management/commands/index_simce_docs.py` | ✅ Nuevo — indexar PDFs MINEDUC |
-| `simce/admin.py` | ✅ Actualizado — TextoBiblioteca, PreguntaBanco |
+### Navegación
+- Botón "Volver" en chat → `portal:index` (dashboard)
+- URL `/<slug>/` redirige a `conversation_list` (vista detalle eliminada)
+- `ai_list` redirige a `conversation_list` del asistente
 
-### Templates nuevos/actualizados
-| Template | Estado |
-|----------|--------|
-| `admin_dashboard.html` | ✅ Botones Biblioteca + Crear test |
-| `biblioteca_list.html` | ✅ Listado con filtros + "Crear manual" + "Generar con IA" |
-| `biblioteca_texto_detalle.html` | ✅ CRUD inline preguntas + ajustes IA |
-| `biblioteca_texto_form.html` | ✅ Nuevo — crear/editar texto manualmente |
-| `admin_crear_test.html` | ✅ Nuevo — seleccionar textos de biblioteca |
-| `admin_revisar_textos.html` | ✅ Reescrito — revisar textos antes de generar preguntas |
-| `admin_revisar.html` | ✅ Adaptado a nueva estructura PruebaTexto |
-| `prueba_rendir.html` | ✅ Adaptado a prueba_textos |
-
-### CRUD implementado
-- **TextoBiblioteca**: crear manual, editar (form completo), eliminar, aprobar/rechazar, ajuste IA
-- **PreguntaBanco**: crear manual (modal), editar (modal pre-cargado con json_script), eliminar, aprobar/rechazar, generar con IA
-
-### Pendiente post-deploy
-- [ ] Verificar que migración 0005 se aplica correctamente en Railway (el push ya fue hecho)
-- [ ] Correr `python manage.py index_simce_docs` para indexar PDFs MINEDUC en `simce_docs/`
-- [ ] Test completo del flujo: biblioteca → crear test → generar preguntas → publicar → rendir
+### Sistema de feedback de pilotaje
+- **Banner amarillo** en cabecera del chat → modal feedback general (`origin='banner'`)
+- **👎 por burbuja IA** → modal con contexto pre-cargado + `origin='respuesta_ia'` + FK al mensaje
+- Input obligatorio en ambos; si vacío → borde rojo sin enviar
+- Al enviar: toast ✓, botón 👎 se convierte en ✓ deshabilitado
 
 ---
 
@@ -79,71 +82,44 @@ Biblioteca → generar/crear textos → revisar/aprobar textos
 
 Pipeline 100% automático.
 
-### Flujo del Pipeline
 ```
 Booking creado → CalendarEvent + ImprovementGoal (IA)
-Usuario entra → Daily dispara "meeting-started" → Django inicia grabación (async thread)
-Reunión termina → "recording.ready-to-download" → booking.processing_status = 'pendiente'
-GitHub Actions (cron 15min) → /api/pending/ → descarga → chunks 10min + detección silencio
-→ Whisper (chunks dBFS > -40) → DeepSeek (acta + acuerdos) → Daily (participantes)
-→ /api/update/ → booking.processing_status = 'completado' → ImprovementGoal actualizado
+Usuario entra → Daily "meeting-started" → Django inicia grabación (async thread)
+Reunión termina → "recording.ready-to-download" → processing_status = 'pendiente'
+GitHub Actions (cron 15min) → descarga → chunks 10min + detección silencio
+→ Whisper → DeepSeek (acta + acuerdos) → Daily (participantes)
+→ /api/update/ → processing_status = 'completado' → ImprovementGoal actualizado
 ```
 
-### Archivos Clave
-| Archivo | Nota |
-|---------|------|
-| `meetings/views.py` | Sin N+1 queries; webhook async; recording_id se guarda en sync |
-| `scripts/process_recordings.py` | Detección silencio, logging detallado |
-| `.github/workflows/process_recordings.yml` | Early-exit si no hay pendientes |
-
 ---
 
-## ✅ MÓDULO COMPLETADO: Agentes IA (`ai_modules/`)
+## ✅ MÓDULO COMPLETADO: SIMCE (`simce/`)
 
-Consolidación total de 5 asistentes exclusivos para **Temuco** con motor RAG y protocolo institucional.
+Generador de pruebas con IA. Arquitectura nueva desde migración 0005.
 
-### Agentes Configurados (Exclusivo Temuco)
-| slug | Rol | Dominio Principal |
-|------|-----|-------------------|
-| `director-temuco` | DIRECTOR | Coordinación, Liderazgo, Matriz Eisenhower |
-| `utp-temuco` | UTP | Curricular, Pedagógico, Decreto 67/83/170 |
-| `representante-temuco` | REPRESENTANTE | Legal, Contratos, Recursos SEP/PIE, Ley 21809 |
-| `inspector-temuco` | INSPECTOR | RIOHS personal, Estatuto Docente, Sumarios |
-| `convivencia-temuco` | CONVIVENCIA | RICE, Ley 20536, Política Nacional de Convivencia |
+### Modelos
+`TextoBiblioteca` · `PreguntaBanco` + `AlternativaBanco` · `PruebaTexto` (junction) · `SimceDocumento` + `SimceChunk` (RAG)
 
----
+### Flujo admin
+```
+Biblioteca → generar/crear textos → revisar/aprobar
+→ "Crear test desde biblioteca" → selecciona textos → configura preguntas por nivel
+→ lanzar generación IA → revisión final → aprobar → publicar
+```
 
-## ✅ MÓDULO COMPLETADO: Cloudflare R2 Storage
-
-Migración de archivos multimedia a almacenamiento compatible con S3 para optimizar Railway.
+### Dos modos para estudiantes
+- **Modo SIMCE**: formulario clásico, entrega al final
+- **Modo Pistas**: AJAX por pregunta, puntaje 4-3-2-0 según intentos
 
 ---
 
 ## 🎯 PRÓXIMOS PASOS
 
-- [ ] Verificar deploy Railway con migración 0005 (puede que requiera un redeploy manual si falla)
-- [ ] Test flujo SIMCE completo end-to-end
+- [ ] **Analizar feedbacks piloto** — revisar `PilotFeedback` en admin Django después de la semana de pilotaje
 - [ ] Indexar PDFs MINEDUC para RAG (`python manage.py index_simce_docs`)
-- [ ] Notificaciones Push cuando procesamiento de reunión termine
+- [ ] Notificaciones push cuando procesamiento de reunión termine
 - [ ] Badges de estado en lista de grabaciones
 - [ ] Indexar PME faltante en Knowledge Base
-
----
-
-## Secretos de Entorno
-
-| Variable | Descripción |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL Railway (base principal) |
-| `KNOWLEDGE_BASE_URL` | Supabase (ai_modules — pausa si inactivo 7 días en plan free) |
-| `DAILY_API_KEY` | API Daily.co |
-| `OPENAI_API_KEY` | Embeddings text-embedding-3-small |
-| `DEEPSEEK_API_KEY` | Motor principal IA (base_url: api.deepseek.com, modelo: deepseek-chat) |
-| `AWS_ACCESS_KEY_ID` | Cloudflare R2 |
-| `AWS_SECRET_ACCESS_KEY` | Cloudflare R2 |
-| `AWS_STORAGE_BUCKET_NAME` | `intranet-sfa-storage` |
-| `AWS_S3_ENDPOINT_URL` | Endpoint R2 |
-| `INTERNAL_API_KEY` | Seguridad webhooks/API interna |
 
 ---
 
@@ -151,8 +127,25 @@ Migración de archivos multimedia a almacenamiento compatible con S3 para optimi
 
 | Hash | Descripción |
 |------|-------------|
+| `cab9684` | fix(prompts): agrega _REGLA_TOPICO — rechaza consultas fuera del dominio escolar |
+| `187e73d` | feat(chat): sistema de feedback de pilotaje (banner + 👎 por respuesta) |
+| `2e8a93f` | feat(nav): volver desde chat va al dashboard, elimina vista detalle |
+| `22bcfc8` | fix(prompts): refuerza prohibición de artículos laborales y delimita rol Inspector |
+| `e2e45de` | feat(chat): interfaz ChatGPT — sidebar conversaciones + panel unificado |
 | `b94ad21` | feat(simce): CRUD completo TextoBiblioteca y PreguntaBanco |
-| `e01e3f5` | fix(simce): SET CONSTRAINTS ALL IMMEDIATE antes de ALTER TABLE |
-| `4c4498e` | feat(simce): nueva arquitectura — Biblioteca + PreguntaBanco + RAG |
-| `d78990e` | fix(simce): recuperación robusta de errores en hilos |
-| `22c4565` | feat(simce): flujo en 2 fases — revisión de textos antes de generar preguntas |
+
+---
+
+## Secretos de Entorno
+
+| Variable | Descripción |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL Railway |
+| `DAILY_API_KEY` | API Daily.co |
+| `OPENAI_API_KEY` | Embeddings text-embedding-3-small |
+| `DEEPSEEK_API_KEY` | Motor IA (base_url: api.deepseek.com, modelo: deepseek-chat) |
+| `AWS_ACCESS_KEY_ID` | Cloudflare R2 |
+| `AWS_SECRET_ACCESS_KEY` | Cloudflare R2 |
+| `AWS_STORAGE_BUCKET_NAME` | `intranet-sfa-storage` |
+| `AWS_S3_ENDPOINT_URL` | Endpoint R2 |
+| `INTERNAL_API_KEY` | Seguridad webhooks/API interna |

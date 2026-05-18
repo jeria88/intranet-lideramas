@@ -1,149 +1,149 @@
-# Intranet Congregacional — Railway Edition
+# Intranet Congregacional — Red SFA
 
 Sistema de gobernanza digital para 8 establecimientos educativos de la Congregación Hermanas Terceras Franciscanas.
 
-**Stack:** Django 6.0.2 · PostgreSQL · Railway.app · WhiteNoise · Gunicorn  
-**Proyecto:** Desarrollo SFA · Abril 2026
+**Stack:** Django 5.x · PostgreSQL (Railway) · Cloudflare R2 · Daily.co · DeepSeek · OpenAI Whisper  
+**Establecimientos:** Temuco · Lautaro · Renaico · Santiago · Imperial · Ercilla · Arauco · Angol
 
 ---
 
 ## 🚀 Deploy en Railway
 
-### 1. Crear proyecto en Railway
-1. Ir a [railway.app](https://railway.app) y crear un nuevo proyecto
-2. Conectar este repositorio GitHub
-3. Agregar el **plugin PostgreSQL** desde Railway Dashboard
-
-### 2. Configurar variables de entorno en Railway
+El deploy es automático al hacer push a `main`. Railway ejecuta el Procfile:
 
 ```
-SECRET_KEY         = <genera uno con: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())">
-DJANGO_SETTINGS_MODULE = config.settings
-DATABASE_URL       = <Railway lo provee automáticamente>
-ALLOWED_HOSTS      = tu-proyecto.railway.app
+web: python manage.py migrate
+     && python manage.py activate_all_users
+     && python manage.py setup_all_establishments --update-prompts
+     && python manage.py seed_simce_curriculum
+     && python manage.py collectstatic --noinput
+     && python manage.py ensure_webhook
+     && python manage.py enable_room_recording
+     && gunicorn config.wsgi --workers 1 --timeout 300 --log-file -
 ```
 
-### 3. Comandos de build (configurar en Railway)
-```
-# Build command:
-pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+`setup_all_establishments --update-prompts` actualiza los 41 asistentes IA (5 roles × 8 establecimientos + 1 RED) automáticamente en cada deploy.
 
-# Start command (en Railway: Settings > Start Command):
-python manage.py migrate && python seed_railway.py && gunicorn config.wsgi --log-file -
-```
+### Variables de entorno requeridas
+
+| Variable | Descripción |
+|----------|-------------|
+| `SECRET_KEY` | Django secret key |
+| `DATABASE_URL` | PostgreSQL Railway (auto-provisto) |
+| `ALLOWED_HOSTS` | tu-proyecto.railway.app |
+| `DEEPSEEK_API_KEY` | Motor principal IA (api.deepseek.com, modelo: deepseek-chat) |
+| `OPENAI_API_KEY` | Embeddings text-embedding-3-small |
+| `DAILY_API_KEY` | Videollamadas Daily.co |
+| `AWS_ACCESS_KEY_ID` | Cloudflare R2 |
+| `AWS_SECRET_ACCESS_KEY` | Cloudflare R2 |
+| `AWS_STORAGE_BUCKET_NAME` | `intranet-sfa-storage` |
+| `AWS_S3_ENDPOINT_URL` | Endpoint R2 |
+| `INTERNAL_API_KEY` | Seguridad webhooks/API interna |
 
 ---
 
-## 💻 Desarrollo Local
-
-```bash
-# 1. Crear entorno virtual
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
-
-# 2. Instalar dependencias
-pip install -r requirements.txt
-
-# 3. Configurar BD local (SQLite por defecto)
-python manage.py migrate
-
-# 4. Cargar datos iniciales
-python seed_railway.py
-
-# 5. Correr servidor
-python manage.py runserver
-```
-
-Acceder a: http://127.0.0.1:8000/  
-Admin: http://127.0.0.1:8000/admin/ → admin / Admin1234!
-
----
-
-## 🏗️ Arquitectura
+## 🏗️ Estructura del Proyecto
 
 ```
 intranet_railway/
-├── config/               # Configuración Django
-│   ├── settings.py       # Configuración unificada (Dev/Prod)
-│   ├── urls.py
-│   ├── wsgi.py           # Entrypoint Gunicorn
-│   └── asgi.py
+├── config/               # Settings · urls.py · wsgi.py
+├── users/                # Modelo User (6 roles × 8 establecimientos)
+├── portal/               # Dashboard principal
+├── meetings/             # Videollamadas Daily.co + grabaciones + actas IA
+├── ai_modules/           # 41 asistentes IA + sistema de conversaciones
+├── simce/                # Generador de pruebas SIMCE con IA
+├── library/              # Biblioteca documental
+├── improvement_cycle/    # Ciclo de mejora + metas estratégicas
+├── notifications/        # Notificaciones internas
+├── messaging/            # Mensajería interna
+├── calendar_red/         # Calendario estratégico congregacional
 │
-├── users/                # Modelo User (5 roles × 8 establecimientos)
-├── portal/               # Dashboard + Circulares
-├── meetings/             # Salas Jitsi + Grabaciones + Acuerdos
-├── ai_modules/           # Asesores IA por perfil (40 total)
-├── library/              # Biblioteca Documental
-├── evidencia/            # Formularios de Evaluación
-├── messaging/            # Mensajería Interna
-├── calendar_red/         # Calendario Estratégico
-├── improvement_cycle/    # Metas de Mejora + Alertas de Riesgo
-├── notifications/        # Notificaciones Internas
-│
-├── templates/            # Base template
-├── static/               # CSS + Imágenes
-├── media/                # Archivos subidos (vacío en repo)
-│
-├── requirements.txt      # Sin Firebase
-├── Procfile              # web: gunicorn config.wsgi
-├── runtime.txt           # python-3.12
-├── seed_railway.py       # Datos iniciales
-└── .env.example          # Variables de entorno documentadas
+├── Procfile              # Arranque Railway (ver arriba)
+├── requirements.txt
+├── seed_railway.py       # Datos iniciales (usuarios, establecimientos)
+└── .env.example
 ```
 
 ---
 
-## 🎥 Módulo Videollamadas (Daily.co)
+## 🔑 Roles del Sistema
 
-Guía para la implementación del sistema de salas dinámicas por Establecimiento y Rol.
-
-### 1. Preparar Rama de Desarrollo
-Inicia el trabajo en una rama aislada para este módulo:
-```bash
-git checkout -b modulo-videollamadas
-```
-
-### 2. Configuración en `.env`
-Documentar las claves y la base de las salas:
-```env
-# Daily.co Configuration
-DAILY_API_KEY=tu_api_key_aqui
-DAILY_DOMAIN=intranet-sfa
-```
-
-### 3. Lógica de Salas Identificadas
-Las salas seguirán el formato simétrico `https://intranet-sfa.daily.co/{identificador}`.
-
-**Mapeo de URLs:**
-- **Por Rol:** `https://intranet-sfa.daily.co/director`, `https://intranet-sfa.daily.co/utp`, etc.
-- **Por Establecimiento:** `https://intranet-sfa.daily.co/temuco`, `https://intranet-sfa.daily.co/angol`, etc.
-
-### 4. Flujo Automatizado y Reportes (IA)
-1. **Generación de Artefactos**: Al terminar la reunión, la grabación se procesa para generar automáticamente:
-   - Acta de la Reunión (DeepSeek)
-   - Acuerdos Detectados y Compromisos
-   - Lista de Participantes (Validación de Asistencia)
-2. **Descarga de PDFs**: Todos estos artefactos pueden ser descargados como documentos PDF listos para imprimir desde el detalle de la reunión. Antes de que el procesamiento termine, la plataforma mostrará un estado de "En proceso...".
-
-### 5. Pasos de Implementación (Próximamente)
-1.  **Refactorización de Modelos:** Ajustar `MeetingRoom` en `meetings/models.py` para incluir campos de filtrado por establecimiento y mejorar la validación de roles.
-2.  **Lógica de Redirección:** Modificar la vista principal de `meetings` para que detecte el origen del clic (Rol vs Establecimiento) y redirija a la URL de Daily correspondiente.
-3.  **Interfaz Dinámica:** Actualizar los botones en el frontend para que solo se muestren las salas permitidas según el contexto del usuario autenticado.
+| Rol | Descripción |
+|-----|-------------|
+| `REPRESENTANTE` | Representante Legal del establecimiento |
+| `DIRECTOR` | Director/a |
+| `UTP` | Unidad Técnica Pedagógica |
+| `INSPECTOR` | Inspector/a General |
+| `CONVIVENCIA` | Encargado/a Convivencia Escolar |
+| `RED` | Equipo Red Congregacional (acceso total) |
 
 ---
 
-## 📋 Carta Gantt (extracto)
+## 🧠 Módulo Asistentes IA (`ai_modules/`)
 
-| Jornada | Fecha | Módulo |
-|---------|-------|--------|
-| 1-4 | 02-05 Abr | Infraestructura base + Railway deploy |
-| 5-9 | 07-11 Abr | Módulo Videollamadas (Daily.co) |
-| 10-13 | 14-17 Abr | Asesores IA (DeepSeek API) |
-| 14-17 | 21-24 Abr | Sistematización + Calendario |
-| 18-20 | 28-30 Abr | Testing + MVP final |
+### Escala
+- **41 asistentes**: 5 roles × 8 establecimientos + 1 asistente RED
+- Todos gestionados por `setup_all_establishments.py` — fuente única de verdad para prompts
 
-**Fecha MVP demo:** 15 de mayo 2026
+### Arquitectura de conversaciones
+Interfaz ChatGPT-style: panel lateral con historial + panel de chat. Modelos:
+- `ChatConversation`: conversación con título, usuario y asistente
+- `ConversationMessage`: mensajes con rol (user/assistant) y timestamp
+- `PilotFeedback`: feedback de pilotaje (banner general o 👎 por respuesta)
+
+### Protocolo de prompts (capas por orden de inyección)
+
+| Capa | Constante | Propósito |
+|------|-----------|-----------|
+| 1 | `_REGLA_URGENCIA` | 🚨 Gate de denuncia obligatoria — se ejecuta ANTES de todo |
+| 2 | Prompt de rol | Tabla PASO 1 + competencias específicas del estamento |
+| 3 | `_PASOS` | Lógica condicional: SI NO → para; SI SÍ → continúa PASO 2-4 |
+| 4 | `_META_REGLA` | Las reglas siguientes solo aplican si el caso corresponde al rol |
+| 5 | `_REGLA_TOPICO` | Rechaza consultas fuera del dominio escolar |
+| 6 | `_REGLA_DIAGNOSTICOS` | Exige documento oficial para activar apoyos NEE |
+| 7 | `_REGLA_CONFLICTOS` | Orden: Salud Mental → Convivencia → Medidas normativas |
+| 8 | `_REGLA_INTEGRIDAD` | Prohíbe inventar artículos de leyes (CT, ED, CP, LGE, etc.) |
+| 9 | `_REGLA_RICE` | Prohíbe inventar artículos del RICE interno |
+| 10 | `_REGLA_OPD_OLN` | Nomenclatura correcta OPD/OLN |
+| 11 | `_ORGANIGRAMA_DERIVACION` | Competencias por estamento |
+| 12 | `_RECORDATORIO_FORMATO` | Refuerzo final: NO → para; SÍ → continúa |
+| 13 | `_DISCLAIMER` | Pie de legalidad Lideramas |
+
+### Reglas críticas de integridad
+- **Artículos prohibidos**: nunca citar con contenido art. 161/163/169 CT, art. 72 ED, art. 296 CP u otros sin RAG
+- **Inspector ≠ UTP**: materias pedagógicas (notas, planificación) son de UTP aunque el RIOHS sea del Inspector
+- **Urgencia siempre primero**: abuso sexual, violencia grave, arma → 🚨 antes de cualquier tabla
+
+### Feedback de pilotaje
+- **Banner amarillo** en cabecera del chat → reporta experiencia general
+- **👎 por burbuja** de la IA → reporta esa respuesta específica con contexto pre-cargado
+- Ambos requieren input obligatorio del usuario
+- Guardado en `PilotFeedback` con `origin`, `user`, `message` (FK), `feedback_text`
+
+---
+
+## 🎥 Módulo Videollamadas (`meetings/`)
+
+Pipeline 100% automático:
+
+```
+Booking creado → CalendarEvent + ImprovementGoal (IA)
+Usuario entra → Daily dispara "meeting-started" → Django inicia grabación (async thread)
+Reunión termina → "recording.ready-to-download" → booking.processing_status = 'pendiente'
+GitHub Actions (cron 15 min) → descarga → chunks 10 min + detección silencio
+→ Whisper → DeepSeek (acta + acuerdos) → Daily (participantes)
+→ booking.processing_status = 'completado' → ImprovementGoal actualizado
+```
+
+---
+
+## 📝 Módulo SIMCE (`simce/`)
+
+Generador de pruebas con IA en dos modos:
+- **Modo SIMCE**: formulario clásico, entrega al final
+- **Modo Pistas**: AJAX por pregunta, puntaje 4-3-2-0 según intentos
+
+Flujo: Biblioteca de textos → generar/revisar → crear prueba → generar preguntas por nivel → publicar → rendir
 
 ---
 
@@ -152,52 +152,8 @@ Las salas seguirán el formato simétrico `https://intranet-sfa.daily.co/{identi
 | Componente | Costo USD/mes |
 |-----------|--------------|
 | Railway app + PostgreSQL | ~$7 |
-| Daily.co videollamadas | $0-5 |
+| Daily.co videollamadas | $0–5 |
 | Cloudflare R2 (videos 90 días) | ~$3 |
-| DeepSeek V4 API (40 asesores) | ~$0.80-1.50 |
-| OpenAI Whisper (transcripciones) | ~$3-5 |
-| Claude Haiku (actas) | ~$1-2 |
-| **Total** | **~$15-24 USD** |
-
----
-
-## 🔑 Roles del Sistema
-
-| Rol | Descripción |
-|-----|-------------|
-| `REPRESENTANTE` | Representante Legal Congregacional |
-| `DIRECTOR` | Director/a de establecimiento |
-| `UTP` | Unidad Técnica Pedagógica |
-| `INSPECTOR` | Inspector/a General |
-| `CONVIVENCIA` | Encargado/a Convivencia Escolar |
-| `RED` | Equipo Red Congregacional (acceso total) |
-
-**Establecimientos:** Temuco · Lautaro · Renaico · Santiago · Imperial · Ercilla · Arauco · Angol
-
----
-
-## 🧠 Protocolo de Asistentes IA (San Francisco de Asís)
-
-Los 5 asistentes oficiales de **Temuco** operan bajo un protocolo de gobernanza estricto:
-
-### 1. Regla de Derivación (Pertinencia)
-Antes de resolver, la IA analiza si la situación corresponde a su rol. Si no es pertinente, adopta la postura **"Aconseja y deriva"**, orientando al usuario hacia el estamento correcto según el organigrama institucional.
-
-### 2. Estructura Jerárquica
-- **Representante Legal**: Gestión de Contratos y Recursos (SEP/PIE).
-- **Director**: Gestión de lo Urgente e Importante (Matriz Eisenhower).
-- **Gestión y Clima (Inspector/Convivencia)**: Aplicación de RICE/RIOHS y manejo de conflictos.
-- **UTP**: Curricular, Pedagógico y Decretos (67, 83, 170).
-
-### 3. Respuesta en 3 Enfoques
-Toda solución técnica debe proponer acciones bajo tres prismas obligatorios:
-- **Preventivo**: Para evitar recurrencia.
-- **Formativo**: Enfoque pedagógico y educativo.
-- **Reparatorio**: Acciones para corregir o sancionar.
-
-### 4. Blindaje Legal y Checklist
-Generación de una **Lista de Cotejo Universal** al final de cada intervención para asegurar el debido proceso y proteger al establecimiento ante la Superintendencia de Educación.
-
-### 5. Ciclo de Actualización
-- **Documentos Normativos:** Actualización inmediata tras publicarse en la Biblioteca Digital.
-- **Base de Conocimientos:** Consolidada (23.7k+ chunks) para una respuesta RAG de alta precisión.
+| DeepSeek (41 asesores + SIMCE) | ~$1–2 |
+| OpenAI Whisper (transcripciones) | ~$3–5 |
+| **Total** | **~$14–22 USD** |
