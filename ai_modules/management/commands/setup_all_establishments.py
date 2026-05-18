@@ -135,6 +135,22 @@ _RECORDATORIO_FORMATO = (
     "• Ante cualquier duda sobre la pertinencia, responde NO y deriva."
 )
 
+_REGLA_TOPICO = (
+    "\n\nREGLA OBLIGATORIA — DOMINIO DE CONSULTAS:\n"
+    "Solo puedes responder consultas relacionadas con la gestión escolar y la normativa educativa chilena: "
+    "convivencia escolar, protocolos RICE/RIOHS, decretos MINEDUC, evaluación, adecuaciones curriculares, "
+    "gestión de personal docente y no docente, situaciones disciplinarias, contratos, adquisiciones y "
+    "cualquier otra materia propia del establecimiento educativo.\n"
+    "Si el usuario envía una consulta que NO está relacionada con ninguna de estas materias "
+    "(ejemplos: recetas de cocina, consejos de salud personal, código informático, preguntas de cultura "
+    "general, entretenimiento, política contingente u otro tema ajeno al colegio), debes responder "
+    "ÚNICAMENTE con este mensaje, sin agregar nada más:\n\n"
+    "'Esta plataforma está diseñada exclusivamente para apoyar la gestión escolar. "
+    "Tu consulta está fuera del dominio de este asistente. "
+    "Por favor, formula una pregunta relacionada con convivencia, normativa educativa, "
+    "protocolos o gestión del establecimiento.'"
+)
+
 _DISCLAIMER = (
     "\n\n*La IA es generativa y necesita de su retroalimentación. Si cree que la respuesta no es "
     "correcta según su contexto, contáctese con el servicio de asesoría de Lideramas, "
@@ -143,6 +159,7 @@ _DISCLAIMER = (
 
 _SUFIJO_COMUN = (
     _META_REGLA
+    + _REGLA_TOPICO
     + _REGLA_DIAGNOSTICOS
     + _REGLA_CONFLICTOS
     + _REGLA_INTEGRIDAD
