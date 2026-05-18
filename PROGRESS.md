@@ -1,6 +1,6 @@
 # PROGRESS.md — Guía de continuación para cualquier IA
 
-> **Actualizado:** 2026-05-17 · Últimos commits: `cab9684` (_REGLA_TOPICO) → `187e73d` (feedback pilotaje) → `2e8a93f` (nav dashboard) → `22bcfc8` (fixes prompts art+inspector)
+> **Actualizado:** 2026-05-18 · Últimos commits: `d16a03b` (RICE + RIOHS 2025 Temuco indexados, fix ingest FK)
 > Leer esto ANTES de hacer cualquier cambio al código.
 
 ---
@@ -120,6 +120,20 @@ Biblioteca → generar/crear textos → revisar/aprobar
 - [ ] Notificaciones push cuando procesamiento de reunión termine
 - [ ] Badges de estado en lista de grabaciones
 - [ ] Indexar PME faltante en Knowledge Base
+- [ ] Indexar resumen Código del Trabajo (UTP lo resumirá, luego ingestar con `--nivel nacional`)
+- [ ] Indexar RICE y RIOHS para los otros 7 establecimientos
+
+## ✅ Knowledge Base — Estado al 2026-05-18
+
+### Supabase — documentos activos (sin duplicados)
+- **Nacional** (~10.800 chunks): Código del Trabajo, Constitución, Estatuto Docente, Ley Inclusión, Ley Buen Trato, Ley TEA, Ley RNPA, Ley Asistentes Educación, Ley Transparencia, Ley Compras Públicas, Ley Protección Datos, Ley Aula Segura, Ley Convivencia Escolar, DFL-1, DFL-2, Decreto 67, MBDLE, IDPS, Plan Seguridad Escolar, Ley Indígena, entre otras
+- **Congregacional**: Manual Cuentas 2026, Oficio CGR 60820, Normativa congregacional
+- **Institucional/Temuco**: RICE 2025 (36 chunks), RIOHS 2025 (72 chunks), Reglamento Interno 2025, Reglamento Evaluación, PEI, Política Convivencia MINEDUC, Ley 21430, Ley 20845, Derechos del Niño
+- **Rol/Director Temuco**: PEI (150 chunks), EID, MBE, MBDLE, Ley TEA, DFL-2 específico
+
+### Fix aplicado
+- `ingest_md_to_knowledge.py`: busca assistant en `knowledge_base` DB (no en `default`) — evita FK violation entre Supabase y Railway
+- Para indexar nuevos docs: `python manage.py ingest_md_to_knowledge --file X.md --nivel nacional --assistant director-temuco`
 
 ---
 
