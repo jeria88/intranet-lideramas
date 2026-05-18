@@ -225,3 +225,20 @@ class CaseObservation(models.Model):
 
     def __str__(self):
         return f"Obs {self.created_at:%d/%m/%Y} - {self.case.title}"
+
+
+class PilotFeedback(models.Model):
+    ORIGIN_CHOICES = [('banner', 'Banner de pilotaje'), ('respuesta_ia', 'Respuesta IA')]
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    origin = models.CharField(max_length=20, choices=ORIGIN_CHOICES)
+    message = models.ForeignKey(ConversationMessage, on_delete=models.SET_NULL, null=True, blank=True, related_name='feedbacks')
+    feedback_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Feedback Piloto'
+        verbose_name_plural = 'Feedbacks Piloto'
+
+    def __str__(self):
+        return f"[{self.origin}] {self.user} — {self.created_at:%d/%m/%Y %H:%M}"

@@ -154,6 +154,69 @@
     /* Toast */
     .toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 11px 18px; border-radius: 10px; font-size: 13px; z-index: 9999; opacity: 0; transition: opacity .3s; pointer-events: none; }
     .toast.show { opacity: 1; }
+
+    /* ── Pilot banner ── */
+    .pilot-banner {
+        flex-shrink: 0; background: #fef3c7; border-bottom: 1px solid #fcd34d;
+        padding: 7px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        font-size: 12px; color: #92400e;
+    }
+    .btn-reportar-banner {
+        background: #f59e0b; color: #fff; border: none;
+        padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+        cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background .2s;
+    }
+    .btn-reportar-banner:hover { background: #d97706; }
+
+    /* ── AI bubble group (bubble + thumbs) ── */
+    .ai-bubble-group { max-width: 78%; display: flex; flex-direction: column; }
+    .ai-bubble-group .bubble { max-width: 100%; }
+    .thumbs-row { padding: 3px 0 0 2px; }
+    .btn-thumbs {
+        background: none; border: none; cursor: pointer;
+        font-size: 13px; color: #cbd5e1; padding: 2px 5px;
+        border-radius: 4px; transition: color .15s, background .15s; line-height: 1;
+    }
+    .btn-thumbs:hover { color: #94a3b8; background: #f1f5f9; }
+    .btn-thumbs.reported { color: #f59e0b; cursor: default; }
+
+    /* ── Feedback modal ── */
+    .feedback-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(15,23,42,.55); z-index: 10000;
+        align-items: center; justify-content: center;
+    }
+    .feedback-overlay.open { display: flex; }
+    .feedback-modal {
+        background: #fff; border-radius: 16px; padding: 28px;
+        width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        margin: 16px;
+    }
+    .feedback-modal h3 { margin: 0 0 12px; font-size: 16px; color: #1e293b; }
+    .feedback-context {
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 10px 14px; font-size: 13px; color: #64748b; line-height: 1.5;
+        max-height: 90px; overflow-y: auto; margin-bottom: 14px;
+    }
+    .feedback-modal label { font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px; }
+    .feedback-modal textarea {
+        width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
+        border-radius: 10px; font-size: 14px; resize: vertical;
+        min-height: 90px; font-family: inherit; box-sizing: border-box; transition: border-color .2s;
+    }
+    .feedback-modal textarea:focus { outline: none; border-color: #1e73be; }
+    .feedback-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+    .btn-cancelar-fb {
+        background: #f1f5f9; color: #64748b; border: none;
+        padding: 8px 18px; border-radius: 20px; font-size: 13px; cursor: pointer;
+    }
+    .btn-enviar-fb {
+        background: #1e73be; color: #fff; border: none;
+        padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 700;
+        cursor: pointer; transition: background .2s;
+    }
+    .btn-enviar-fb:hover { background: #2563eb; }
+    .btn-enviar-fb:disabled { opacity: .5; cursor: not-allowed; }
 </style>
 {% endblock %}
 
@@ -194,6 +257,11 @@
     <div class="chat-panel">
         {% if conversation %}
 
+        <div class="pilot-banner">
+            <span>🧪 <strong>Semana de pilotaje</strong> — Si el sistema arroja una respuesta inesperada o mejorable, repórtala.</span>
+            <button class="btn-reportar-banner" onclick="abrirFeedback('banner', null, null)">Reportar</button>
+        </div>
+
         <div class="chat-header">
             <div>
                 <div class="chat-header-title">{{ conversation.title }}</div>
@@ -205,13 +273,16 @@
         <div id="chat-messages">
             {% for msg in chat_messages %}
             <div class="message-row {% if msg.role == 'user' %}user{% else %}ai{% endif %}">
-                <div class="bubble">
-                    {% if msg.role == 'assistant' %}
-                        <div class="md-content">{{ msg.content }}</div>
-                    {% else %}
-                        {{ msg.content }}
-                    {% endif %}
-                </div>
+                {% if msg.role == 'assistant' %}
+                    <div class="ai-bubble-group">
+                        <div class="bubble"><div class="md-content">{{ msg.content }}</div></div>
+                        <div class="thumbs-row">
+                            <button class="btn-thumbs" title="Reportar esta respuesta" onclick="abrirFeedback('respuesta_ia', {{ msg.pk }}, this)">👎</button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="bubble">{{ msg.content }}</div>
+                {% endif %}
             </div>
             {% endfor %}
             <div class="typing-indicator ai" id="typing">
@@ -247,11 +318,27 @@
 <div class="toast" id="toast"></div>
 
 {% if conversation %}
+<div class="feedback-overlay" id="feedback-overlay">
+    <div class="feedback-modal">
+        <h3 id="fb-title">Reportar respuesta</h3>
+        <div class="feedback-context" id="fb-context" style="display:none;"></div>
+        <label for="fb-textarea">¿Qué mejorarías o qué estuvo mal?</label>
+        <textarea id="fb-textarea" placeholder="Describe el problema o tu sugerencia…"></textarea>
+        <div class="feedback-modal-actions">
+            <button class="btn-cancelar-fb" onclick="cerrarFeedback()">Cancelar</button>
+            <button class="btn-enviar-fb" id="btn-enviar-fb" onclick="enviarFeedback()">Enviar reporte</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if conversation %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-const CONV_URL  = "{% url 'ai_modules:conversation_detail' slug=assistant.slug conv_id=conversation.pk %}";
-const CASE_URL  = "{% url 'ai_modules:conversation_save_case' slug=assistant.slug conv_id=conversation.pk %}";
-const CSRF      = "{{ csrf_token }}";
+const CONV_URL     = "{% url 'ai_modules:conversation_detail' slug=assistant.slug conv_id=conversation.pk %}";
+const CASE_URL     = "{% url 'ai_modules:conversation_save_case' slug=assistant.slug conv_id=conversation.pk %}";
+const FEEDBACK_URL = "{% url 'ai_modules:submit_pilot_feedback' %}";
+const CSRF         = "{{ csrf_token }}";
 
 // Render markdown en mensajes existentes
 document.querySelectorAll('.md-content').forEach(el => {
@@ -274,21 +361,37 @@ input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
-function addBubble(role, content) {
+function addBubble(role, content, msgId) {
     const msgs = document.getElementById('chat-messages');
     const row = document.createElement('div');
     row.className = `message-row ${role === 'user' ? 'user' : 'ai'}`;
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
+
     if (role === 'assistant') {
+        const group = document.createElement('div');
+        group.className = 'ai-bubble-group';
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
         bubble.innerHTML = marked.parse(content);
+        group.appendChild(bubble);
+        const thumbsRow = document.createElement('div');
+        thumbsRow.className = 'thumbs-row';
+        const btn = document.createElement('button');
+        btn.className = 'btn-thumbs';
+        btn.title = 'Reportar esta respuesta';
+        btn.textContent = '👎';
+        btn.onclick = () => abrirFeedback('respuesta_ia', msgId || null, btn);
+        thumbsRow.appendChild(btn);
+        group.appendChild(thumbsRow);
+        row.appendChild(group);
     } else {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
         bubble.textContent = content;
+        row.appendChild(bubble);
     }
-    row.appendChild(bubble);
+
     msgs.insertBefore(row, document.getElementById('typing'));
     scrollBottom();
-    return bubble;
 }
 
 async function sendMessage() {
@@ -312,9 +415,9 @@ async function sendMessage() {
         const data = await res.json();
         document.getElementById('typing').style.display = 'none';
         if (!res.ok) {
-            addBubble('assistant', data.error || 'Error del servidor. Intenta de nuevo.');
+            addBubble('assistant', data.error || 'Error del servidor. Intenta de nuevo.', null);
         } else {
-            addBubble('assistant', data.response);
+            addBubble('assistant', data.response, data.message_id || null);
             // Actualizar título en sidebar si la conv era nueva
             if (data.new_title) {
                 document.querySelector('.chat-header-title').textContent = data.new_title;
@@ -360,6 +463,80 @@ function showToast(msg) {
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ── Feedback de pilotaje ──
+let fbOrigin = null, fbMsgId = null, fbBtn = null;
+
+function abrirFeedback(origin, msgId, btn) {
+    fbOrigin = origin; fbMsgId = msgId; fbBtn = btn;
+    const title = document.getElementById('fb-title');
+    const ctx   = document.getElementById('fb-context');
+    document.getElementById('fb-textarea').value = '';
+    document.getElementById('fb-textarea').style.borderColor = '';
+
+    if (origin === 'banner') {
+        title.textContent = 'Reportar experiencia general';
+        ctx.style.display = 'none';
+    } else {
+        title.textContent = 'Reportar esta respuesta';
+        if (btn) {
+            const bubble = btn.closest('.ai-bubble-group')?.querySelector('.bubble');
+            if (bubble) {
+                const txt = bubble.textContent.trim();
+                ctx.textContent = txt.length > 300 ? txt.substring(0, 300) + '…' : txt;
+                ctx.style.display = 'block';
+            }
+        }
+    }
+    document.getElementById('feedback-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('fb-textarea').focus(), 50);
+}
+
+function cerrarFeedback() {
+    document.getElementById('feedback-overlay').classList.remove('open');
+    fbOrigin = null; fbMsgId = null; fbBtn = null;
+}
+
+async function enviarFeedback() {
+    const text = document.getElementById('fb-textarea').value.trim();
+    if (!text) {
+        document.getElementById('fb-textarea').style.borderColor = '#f87171';
+        return;
+    }
+    const submitBtn = document.getElementById('btn-enviar-fb');
+    const targetBtn = fbBtn;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enviando…';
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('origin', fbOrigin);
+    fd.append('feedback_text', text);
+    if (fbMsgId) fd.append('message_id', fbMsgId);
+
+    try {
+        const res = await fetch(FEEDBACK_URL, { method: 'POST', body: fd });
+        if (res.ok) {
+            cerrarFeedback();
+            showToast('✓ Reporte enviado, gracias');
+            if (targetBtn) {
+                targetBtn.textContent = '✓';
+                targetBtn.classList.add('reported');
+                targetBtn.disabled = true;
+            }
+        } else {
+            showToast('Error al enviar el reporte');
+        }
+    } catch(e) {
+        showToast('Error de conexión');
+    }
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Enviar reporte';
+}
+
+document.getElementById('feedback-overlay').addEventListener('click', function(e) {
+    if (e.target === this) cerrarFeedback();
+});
 </script>
 {% endif %}
 {% endblock %}

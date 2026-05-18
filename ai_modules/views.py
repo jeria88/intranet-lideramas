@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
-from .models import AIAssistant, AIQuery, AIChatMessage, AICase, CaseObservation, ChatConversation, ConversationMessage
+from .models import AIAssistant, AIQuery, AIChatMessage, AICase, CaseObservation, ChatConversation, ConversationMessage, PilotFeedback
 from notifications.models import Notification
 from .forms import AIQueryForm
 from .services import call_deepseek_ai
@@ -635,10 +635,10 @@ def conversation_detail(request, slug, conv_id):
 
         ai_response = call_deepseek_ai(assistant, history, user_message, attached_content=attached_text)
 
-        ConversationMessage.objects.create(conversation=conversation, role='assistant', content=ai_response)
+        ai_msg = ConversationMessage.objects.create(conversation=conversation, role='assistant', content=ai_response)
         conversation.save(update_fields=['updated_at'])
 
-        return JsonResponse({'response': ai_response, 'status': 'success', 'new_title': new_title})
+        return JsonResponse({'response': ai_response, 'status': 'success', 'new_title': new_title, 'message_id': ai_msg.pk})
 
     messages = list(conversation.messages.all())
     all_conversations = ChatConversation.objects.filter(
@@ -651,3 +651,30 @@ def conversation_detail(request, slug, conv_id):
         'chat_messages': messages,
         'all_conversations': all_conversations,
     })
+
+
+@login_required
+def submit_pilot_feedback(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    origin = request.POST.get('origin', '')
+    feedback_text = request.POST.get('feedback_text', '').strip()
+    message_id = request.POST.get('message_id', '')
+
+    if not feedback_text:
+        return JsonResponse({'error': 'El feedback no puede estar vacío'}, status=400)
+    if origin not in ('banner', 'respuesta_ia'):
+        return JsonResponse({'error': 'Origen inválido'}, status=400)
+
+    message = None
+    if origin == 'respuesta_ia' and message_id:
+        message = ConversationMessage.objects.filter(pk=message_id, role='assistant').first()
+
+    PilotFeedback.objects.create(
+        user=request.user,
+        origin=origin,
+        message=message,
+        feedback_text=feedback_text,
+    )
+    return JsonResponse({'status': 'ok'})
