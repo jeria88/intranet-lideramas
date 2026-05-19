@@ -154,7 +154,7 @@ def call_deepseek_ai(assistant, messages_history, user_query, temperature=0.7, a
 
     # RAG: Recuperar fragmentos relevantes de la BD
     try:
-        relevant_context = get_relevant_chunks(assistant, user_query)
+        relevant_context = get_relevant_chunks(assistant, user_query, top_n=20)
     except Exception as e:
         print(f"Error en RAG: {e}")
         relevant_context = ""

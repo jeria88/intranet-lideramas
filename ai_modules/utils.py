@@ -494,7 +494,7 @@ def get_relevant_chunks(assistant, query, top_n=10):
     # 6. Selección por "Cubos" (Garantiza presencia de normativa oficial)
     # Cubo A: Fragmentos de Ley/Manual (Prioridad Legal)
     sacred_idxs = np.where(priority_mask)[0]
-    sacred_top_n = min(len(sacred_idxs), 7)
+    sacred_top_n = min(len(sacred_idxs), 10)
     sacred_top = sacred_idxs[np.argsort(similarities[sacred_idxs])[::-1][:sacred_top_n]]
 
     # Cubo A2: RICE garantizado (top 3) — obligaciones de estudiantes y faltas
