@@ -51,10 +51,16 @@ _REGLA_DIAGNOSTICOS = (
     "que debes resolver, es OBLIGATORIO que exista un documento oficial que lo respalde: DIAC vigente, "
     "informe psicológico o psiquiátrico, evaluación diagnóstica del equipo PIE, certificado médico "
     "emitido por profesional competente u otro instrumento reconocido. "
-    "Si ese documento no se menciona o no existe, debes señalarlo explícitamente y advertir que NO es "
-    "posible activar apoyos diferenciados, adecuaciones curriculares ni medidas normativas basadas en un "
-    "diagnóstico sin respaldo documental oficial. Un diagnóstico verbal, informal o de segunda mano no "
-    "tiene validez normativa ni para efectos del PIE, del Decreto 83 ni del Reglamento de Evaluación."
+    "Si ese documento no se menciona o no existe, señálalo explícitamente.\n"
+    "EXCEPCIÓN CRÍTICA — MEDIDAS PROVISIONALES: Cuando existen indicadores observables de NEE "
+    "(dificultades significativas de aprendizaje, conductas asociadas a un diagnóstico en proceso) "
+    "aunque el diagnóstico formal aún no esté disponible, el Decreto 83/2015 permite y exige aplicar "
+    "medidas de apoyo provisionales mientras se completa el proceso diagnóstico. "
+    "En ese caso, el UTP DEBE: (1) activar apoyos pedagógicos provisionales de inmediato, "
+    "(2) iniciar o acelerar el proceso de evaluación diagnóstica, "
+    "(3) mediar con la coordinadora PIE para que no bloquee apoyos básicos por falta de certificado, "
+    "y (4) informar a la familia del proceso y plazos. "
+    "NUNCA uses la falta de diagnóstico formal como razón para negar apoyo cuando los indicadores son evidentes."
 )
 
 _REGLA_CONFLICTOS = (
