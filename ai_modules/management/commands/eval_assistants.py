@@ -34,7 +34,7 @@ CASOS = [
             "Pido a UTP que medie para evitar la repitencia. Sofía tiene 92% de asistencia."
         ),
         "debe_incluir": ["Decreto 83", "adecuaciones"],
-        "no_debe_incluir": ["Carabineros", "Fiscalía", "🚨"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
         "criterios_juez": [
             "Reconoce que se pueden aplicar medidas de apoyo provisionales sin diagnóstico formal",
             "Cita Decreto 83/2015 o normativa de adecuaciones curriculares",
@@ -54,7 +54,7 @@ CASOS = [
             "Pido que se anule la calificación y se aplique evaluación diferenciada."
         ),
         "debe_incluir": ["PACI", "adecuaciones"],
-        "no_debe_incluir": ["Carabineros", "Fiscalía", "🚨", "Ley 21.545"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa", "Ley 21.545"],
         "criterios_juez": [
             "Reconoce que la calificación puede ser inválida por incumplimiento del PACI",
             "Propone evaluación diferenciada con otro instrumento o momento",
@@ -73,7 +73,7 @@ CASOS = [
             "Solicito restituir la nota 5.2 porque mi hija demostró dominio del contenido matemático."
         ),
         "debe_incluir": ["Decreto 67", "evaluación"],
-        "no_debe_incluir": ["Carabineros", "Fiscalía", "🚨"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
         "criterios_juez": [
             "Analiza si el descuento por ortografía en Matemática es normativamente procedente",
             "Señala que el docente debió informar los criterios de evaluación con anticipación (Decreto 67)",
@@ -93,7 +93,7 @@ CASOS = [
             "Pido que se invalide la calificación y se aplique evaluación diferenciada."
         ),
         "debe_incluir": ["PACI", "adecuaciones"],
-        "no_debe_incluir": ["Carabineros", "Fiscalía", "🚨"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
         "criterios_juez": [
             "Reconoce que el PACI fue incumplido (apoyo en traspaso no aplicado)",
             "Propone invalidar la calificación y aplicar nueva evaluación con ajustes",
@@ -112,7 +112,7 @@ CASOS = [
             "Reclamo discriminación. Exijo que le suban la nota a 5.0 por el trabajo del grupo."
         ),
         "debe_incluir": ["Decreto 67", "evaluación"],
-        "no_debe_incluir": ["Carabineros", "Fiscalía", "🚨"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
         "criterios_juez": [
             "Reconoce que la profesora tiene derecho a evaluar desempeño individual",
             "No concede la demanda de subir a 5.0 sin sustento normativo",
@@ -132,7 +132,7 @@ CASOS = [
             "Acuso discriminación por condición de discapacidad. Pido que se ordene calificar la carpeta."
         ),
         "debe_incluir": ["Decreto 83", "ajuste"],
-        "no_debe_incluir": ["Carabineros", "Fiscalía", "🚨"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
         "criterios_juez": [
             "Indica que la profesora está incumpliendo el ajuste razonable del equipo PIE",
             "Ordena o recomienda calificar la carpeta como evaluación válida",
@@ -153,7 +153,7 @@ CASOS = [
             "baja memoria operativa, no a mala intención. Pido que se anule el 4.6 y se aplique nueva evaluación."
         ),
         "debe_incluir": ["PACI", "adecuaciones"],
-        "no_debe_incluir": ["Carabineros", "Fiscalía", "🚨"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
         "criterios_juez": [
             "Reconoce que el PACI fue incumplido (evaluación separada no aplicada)",
             "Contextualiza la conducta de copiar en relación al FIL y la ansiedad",
