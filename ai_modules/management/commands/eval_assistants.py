@@ -532,7 +532,7 @@ def evaluar_con_juez(respuesta: str, rag_context: str, criterios: list,
         return {"veredicto_general": "ERROR", "error": "Sin DEEPSEEK_API_KEY"}
 
     criterios_texto = "\n".join(f"{i+1}. {c}" for i, c in enumerate(criterios))
-    rag_preview = (rag_context[:2000] + "...[truncado]") if len(rag_context) > 2000 else (rag_context or "(sin contexto RAG)")
+    rag_preview = (rag_context[:5000] + "...[truncado]") if len(rag_context) > 5000 else (rag_context or "(sin contexto RAG)")
     prompt = PROMPT_JUEZ.format(
         rol_esperado=rol_esperado,
         deriva_a=deriva_a or "N/A",

@@ -141,7 +141,7 @@ def _filtrar_articulos_no_rag(respuesta: str, relevant_context: str) -> str:
     return respuesta
 
 
-def call_deepseek_ai(assistant, messages_history, user_query, temperature=0.7, attached_content=None):
+def call_deepseek_ai(assistant, messages_history, user_query, temperature=0.3, attached_content=None):
     """
     Realiza una llamada a la API de DeepSeek inyectando el contexto RAG
     y el historial de la conversación.

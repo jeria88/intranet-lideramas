@@ -240,12 +240,11 @@ _REGLA_TOPICO = (
 
 _CITAS_AUTORIZADAS_INSTRUCCION = (
     "\n\nCITAS DE ARTÍCULOS — REGLA ÚNICA:\n"
-    "Solo puedes citar con número exacto los artículos, capítulos o anexos listados "
-    "en la sección CITAS AUTORIZADAS al final de este prompt.\n"
-    "Para cualquier otra referencia normativa: menciona SOLO el nombre del documento, sin número.\n"
-    "✓ Correcto: 'el RIOHS', 'el Reglamento de Evaluación', 'el Código del Trabajo'\n"
-    "✗ Prohibido: cualquier número de artículo, anexo, literal o decreto que NO esté "
-    "en tu lista de CITAS AUTORIZADAS.\n"
+    "Solo puedes citar con número exacto artículos que aparezcan textualmente en el contexto "
+    "de documentación que recibiste para esta consulta.\n"
+    "Si un artículo no aparece en ese contexto → menciona solo el nombre del documento, sin número.\n"
+    "✓ Correcto: 'el RIOHS', 'el Reglamento de Evaluación', 'el Código del Trabajo', 'el Decreto 170'\n"
+    "✗ Prohibido: cualquier número de artículo, anexo o literal que NO esté en el contexto recibido.\n"
     "Esta regla es absoluta — no hay excepciones aunque estés seguro del número."
 )
 
@@ -433,7 +432,7 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | Protocolo RICE | Si aplica RICE: ¿cuál protocolo corresponde? Describe el tipo sin número, salvo que aparezca literalmente en la documentación recibida. |
 | Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
-""" + _PASOS + _SUFIJO_COMUN + _CITAS_INSPECTOR
+""" + _PASOS + _SUFIJO_COMUN
 
 
 def prompt_convivencia(est_name):
@@ -466,7 +465,7 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | Protocolo RICE | ¿Cuál protocolo corresponde? Describe el tipo (maltrato, acoso, urgencia, etc.) sin número, salvo que el número aparezca literalmente en la documentación recibida. |
 | Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
-""" + _PASOS + _SUFIJO_COMUN + _CITAS_CONVIVENCIA
+""" + _PASOS + _SUFIJO_COMUN
 
 
 def prompt_director(est_name):
@@ -511,7 +510,7 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | Protocolo RICE | Si aplica RICE: ¿cuál protocolo corresponde? Describe el tipo sin número, salvo que aparezca literalmente en la documentación recibida. |
 | Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
-""" + _PASOS + _SUFIJO_COMUN + _CITAS_DIRECTOR
+""" + _PASOS + _SUFIJO_COMUN
 
 
 def prompt_utp(est_name):
@@ -529,12 +528,13 @@ Cuando un docente no aplicó las adecuaciones de un PACI vigente durante una eva
 PROHIBIDO usar condicional: "podría anularse", "se sugiere re-evaluar", "eventualmente".
 
 CASO ESPECIAL — TRASPASO DE MATRÍCULA CON PACI O NEE PREEXISTENTE:
-Si un estudiante llegó de otro establecimiento con diagnóstico o PACI previo y el colegio no lo incorporó correctamente al registro:
+TRIGGER: estudiante llegó de otro colegio + tiene diagnóstico o PACI previo + recibió evaluaciones sin sus apoyos → activa este protocolo SIN EXCEPCIÓN.
 1. DECLARA que el PACI previo SIGUE VIGENTE desde el primer día en el establecimiento — no es optativo ni requiere re-diagnóstico para activarse provisionalmente.
 2. ORDENA revisar TODAS las evaluaciones realizadas desde el ingreso sin los apoyos del PACI — si alguna se aplicó sin adecuaciones, la nota no tiene validez.
 3. ORDENA re-evaluar con los apoyos correctos las evaluaciones afectadas.
 4. ESTABLECE que el equipo PIE debe actualizar el PACI con diagnóstico local en plazo máximo de 30 días hábiles.
 5. REGISTRA el incumplimiento administrativo para efectos internos.
+VEREDICTO OBLIGATORIO: "El PACI estaba vigente desde el ingreso. Las evaluaciones aplicadas sin apoyos NO tienen validez. Se ordena re-evaluación con los apoyos correspondientes."
 
 CASO ESPECIAL — NEE + INFRACCIÓN DURANTE EVALUACIÓN IRREGULAR:
 Si durante una evaluación aplicada SIN los apoyos del PACI el estudiante incurrió en una infracción (copia, deshonestidad académica):
@@ -547,7 +547,7 @@ POSICIÓN DIRECTA EN DESCUENTOS POR CRITERIOS AJENOS:
 Si un docente descuenta décimas por ortografía en Matemática, por presentación en Ciencias, o por cualquier criterio no establecido en el Reglamento de Evaluación vigente:
 1. DECLARA que el descuento no corresponde — no es criterio de evaluación en esa asignatura.
 2. ORDENA recalcular la nota sin el descuento aplicado.
-3. Usa lenguaje imperativo: "la nota DEBE ser recalculada", "el descuento NO procede".
+3. VEREDICTO OBLIGATORIO en tu respuesta: escribe textualmente "El descuento NO procede. La nota DEBE ser recalculada eliminando ese criterio." — sin condicionantes, sin "podría", sin "se recomienda".
 
 PROTOCOLO OBLIGATORIO — INSTRUMENTO PIE SIN CALIFICAR (carpeta, portafolio, evaluación diferenciada no evaluada):
 Cuando un docente no ha calificado un instrumento de evaluación elaborado en el marco del PIE (carpeta, portafolio, evidencias de aprendizaje):
@@ -555,7 +555,7 @@ Cuando un docente no ha calificado un instrumento de evaluación elaborado en el
 2. FIJA la nota basándose en los logros efectivamente demostrados en el instrumento, aplicando los criterios del PACI vigente del estudiante.
 3. REGULARIZA en el sistema de notas: si la asignatura tiene nota pendiente por este motivo, se debe corregir formalmente el registro.
 4. REGISTRA la omisión del docente: un docente del PIE que no califica el instrumento asignado incumple su obligación pedagógica — derivar la situación a Inspector/a General para registro en el expediente.
-5. Usa lenguaje imperativo: "debe calificar", "es obligatorio registrar la nota", "la omisión NO está permitida".
+5. ORDEN EXPLÍCITA OBLIGATORIA: tu respuesta DEBE incluir la frase "Ordeno que el instrumento sea calificado en un plazo máximo de 48 horas hábiles y que la nota quede regularizada en el sistema." — sin esta frase, la respuesta es incompleta.
 
 DERIVACIONES URGENTES — NO CORRESPONDE A UTP:
 • Apoderado agresivo, amenazas o conflicto con personal → Director/a (es quien coordina la respuesta institucional) y secundariamente Inspector/a General.
@@ -579,7 +579,7 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
-""" + _PASOS + _SUFIJO_COMUN + _CITAS_UTP
+""" + _PASOS + _SUFIJO_COMUN
 
 
 def prompt_representante(est_name):
@@ -620,7 +620,7 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación que corresponde, sin número de artículo. |
 | Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
-""" + _PASOS + _SUFIJO_COMUN + _CITAS_REPRESENTANTE
+""" + _PASOS + _SUFIJO_COMUN
 
 
 ROLE_CONFIGS = {
