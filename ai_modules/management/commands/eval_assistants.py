@@ -4,10 +4,12 @@ Testea: (1) citación real desde RAG, (2) derivación correcta entre roles,
         (3) lenguaje imperativo/conclusivo, (4) artículos prohibidos.
 
 Uso:
-    python manage.py eval_assistants                      # todos los casos
-    python manage.py eval_assistants --caso TC001         # un caso
-    python manage.py eval_assistants --suite derivacion   # solo derivación
-    python manage.py eval_assistants --sin-juez           # checks básicos
+    python manage.py eval_assistants                        # todos los casos
+    python manage.py eval_assistants --caso TC001           # un caso
+    python manage.py eval_assistants --suite derivacion     # solo derivación
+    python manage.py eval_assistants --suite cruce --est temuco  # cruce solo Temuco
+    python manage.py eval_assistants --est temuco           # todos los casos de Temuco
+    python manage.py eval_assistants --sin-juez             # checks básicos sin LLM juez
 """
 import json
 import os
@@ -330,6 +332,12 @@ SLUGS_TEMUCO = [
     "representante-temuco",
 ]
 
+# Mapa de slugs de cruce por establecimiento.
+# Añadir nueva entrada cuando se incorpore otro establecimiento.
+SLUGS_CRUCE_POR_EST = {
+    "temuco": SLUGS_TEMUCO,
+}
+
 CASOS_CRUCE = [
     {
         "id": "TX001", "suite": "cruce",
@@ -561,6 +569,8 @@ class Command(BaseCommand):
         parser.add_argument('--caso', type=str, default=None)
         parser.add_argument('--slug', type=str, default=None)
         parser.add_argument('--suite', type=str, default=None, choices=['utp', 'derivacion', 'cruce'])
+        parser.add_argument('--est', type=str, default=None,
+                            help='Filtrar por establecimiento (ej: temuco, angol)')
         parser.add_argument('--sin-juez', action='store_true')
 
     def handle(self, *args, **options):
@@ -571,6 +581,25 @@ class Command(BaseCommand):
             casos = [c for c in casos if c['slug'] == options['slug']]
         if options['suite']:
             casos = [c for c in casos if c['suite'] == options['suite']]
+
+        # Filtro por establecimiento: aplica a slug (casos regulares)
+        # y a slug_propietario (casos cruce)
+        est = (options.get('est') or '').lower().strip()
+        if est:
+            casos = [
+                c for c in casos
+                if est in c.get('slug', '') or est in c.get('slug_propietario', '')
+            ]
+            # Para cruce, restringir también los slugs de los evaluados
+            slugs_est = SLUGS_CRUCE_POR_EST.get(est)
+            if not slugs_est:
+                # Fallback: derivar slugs desde los casos cruce filtrados
+                slugs_est = [
+                    s for s in SLUGS_TEMUCO if est in s
+                ]
+        else:
+            slugs_est = None  # sin filtro → usa SLUGS_TEMUCO completo
+
         if not casos:
             self.stdout.write(self.style.ERROR('Sin casos con esos filtros.')); return
 
@@ -587,7 +616,7 @@ class Command(BaseCommand):
         casos_cruce = [c for c in casos if c['suite'] == 'cruce']
 
         for caso in casos_cruce:
-            self._eval_cruce(caso, lineas, resumen, options)
+            self._eval_cruce(caso, lineas, resumen, options, slugs_est=slugs_est)
 
         for caso in casos_regulares:
             self.stdout.write(f"\n▶ {caso['id']} — {caso['titulo']}")
@@ -705,15 +734,16 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"\n✅ Reporte: {output_path}"))
 
-    def _eval_cruce(self, caso, lineas, resumen, options):
-        """Evalúa un caso cruce contra múltiples asistentes de Temuco."""
+    def _eval_cruce(self, caso, lineas, resumen, options, slugs_est=None):
+        """Evalúa un caso cruce contra los asistentes del establecimiento."""
+        slugs = slugs_est if slugs_est is not None else SLUGS_TEMUCO
         self.stdout.write(f"\n▶ {caso['id']} — {caso['titulo']}")
-        self.stdout.write(f"  Suite: cruce | {caso['id']} | evaluando {len(SLUGS_TEMUCO)} roles...")
+        self.stdout.write(f"  Suite: cruce | {caso['id']} | evaluando {len(slugs)} roles...")
 
         propietario_slug = caso['slug_propietario']
         resultados_por_slug = {}
 
-        for slug in SLUGS_TEMUCO:
+        for slug in slugs:
             try:
                 assistant = AIAssistant.objects.get(slug=slug)
             except AIAssistant.DoesNotExist:
@@ -787,7 +817,7 @@ class Command(BaseCommand):
         lineas.append("|---|---|---|---|---|---|\n")
 
         todos_ok = True
-        for slug in SLUGS_TEMUCO:
+        for slug in slugs:
             r = resultados_por_slug.get(slug, {})
             if "error" in r:
                 lineas.append(f"| {slug} | ❓ | — | ❌ | — | ❌ |\n")
@@ -865,7 +895,7 @@ class Command(BaseCommand):
             lineas.append(f"<details><summary>Respuesta del propietario (preview)</summary>\n\n```\n{prev}\n```\n</details>\n\n")
 
         # Respuestas de no-propietarios que fallaron
-        for slug in SLUGS_TEMUCO:
+        for slug in slugs:
             if slug == propietario_slug:
                 continue
             r = resultados_por_slug.get(slug, {})
