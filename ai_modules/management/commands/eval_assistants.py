@@ -317,7 +317,152 @@ CASOS_DERIVACION = [
 ]
 
 
-TODOS_LOS_CASOS = CASOS_UTP + CASOS_DERIVACION
+# ══════════════════════════════════════════════════════════════════════════════
+# SUITE 3 — CRUCE ENTRE ROLES (mismo caso → 5 asistentes de Temuco)
+# Testea: quién dice SÍ, quién dice NO, y si la derivación es correcta
+# ══════════════════════════════════════════════════════════════════════════════
+
+SLUGS_TEMUCO = [
+    "utp-temuco",
+    "inspector-temuco",
+    "convivencia-temuco",
+    "director-temuco",
+    "representante-temuco",
+]
+
+CASOS_CRUCE = [
+    {
+        "id": "TX001", "suite": "cruce",
+        "titulo": "PACI incumplido — ¿quién responde entre los 5 roles?",
+        "query": (
+            "Un estudiante de 6° Básico con TDAH y PACI vigente rindió una prueba de Historia. "
+            "La profesora no aplicó las adecuaciones (tiempo extra y apoyo en traspaso). "
+            "El estudiante marcó las respuestas correctas en el fascículo pero las traspasó "
+            "mal y sacó 3.2. ¿Qué hacemos con esta situación?"
+        ),
+        "slug_propietario": "utp-temuco",
+        "esperado_por_slug": {
+            "utp-temuco":            {"rol": "SÍ"},
+            "inspector-temuco":      {"rol": "NO", "deriva": "UTP"},
+            "convivencia-temuco":    {"rol": "NO", "deriva": "UTP"},
+            "director-temuco":       {"rol": "SÍ_O_NO", "deriva": "UTP"},  # puede coordinar pero delega técnico a UTP
+            "representante-temuco":  {"rol": "NO", "deriva": "UTP"},
+        },
+        "debe_incluir": ["PACI", "adecuaciones"],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
+        "criterios_propietario": [
+            "Señala que la nota aplicada sin respetar el PACI no tiene validez o debe revisarse",
+            "Propone nueva evaluación diferenciada o con los apoyos del PACI",
+            "No activa urgencia penal",
+            "Usa al menos un verbo imperativo o directivo (debe, tiene que, corresponde anular, se debe aplicar)",
+        ],
+    },
+    {
+        "id": "TX002", "suite": "cruce",
+        "titulo": "Pelea física con lesiones — ¿quién activa el protocolo de urgencia?",
+        "query": (
+            "Un estudiante de 7° Básico golpeó a otro en el recreo. El agredido tiene un "
+            "corte en el labio que sangra y dice que le duele la cabeza. Estoy en la sala "
+            "de clases cuando me avisan. ¿Qué hago?"
+        ),
+        "slug_propietario": "inspector-temuco",
+        "esperado_por_slug": {
+            "utp-temuco":            {"rol": "NO", "deriva": "Inspector"},
+            "inspector-temuco":      {"rol": "SÍ"},
+            "convivencia-temuco":    {"rol": "NO", "deriva": "Inspector"},
+            "director-temuco":       {"rol": "NO", "deriva": "Inspector"},
+            "representante-temuco":  {"rol": "NO", "deriva": "Inspector"},
+        },
+        "debe_incluir": [],
+        "no_debe_incluir": [],
+        "criterios_propietario": [
+            "Atiende la urgencia médica de forma inmediata",
+            "Activa el protocolo de violencia física según RICE",
+            "Documenta el incidente y notifica a apoderados de ambos",
+            "No activa denuncia penal automática (verifica gravedad de lesiones primero)",
+        ],
+    },
+    {
+        "id": "TX003", "suite": "cruce",
+        "titulo": "Bullying por redes sociales — ¿quién aplica el RICE?",
+        "query": (
+            "Un grupo de estudiantes de 8° Básico lleva tres semanas publicando memes "
+            "burlándose del peso de una compañera en Instagram. La víctima llora todos "
+            "los días y ya no quiere venir al colegio. ¿Qué protocolo activo?"
+        ),
+        "slug_propietario": "convivencia-temuco",
+        "esperado_por_slug": {
+            "utp-temuco":            {"rol": "NO", "deriva": "Convivencia"},
+            "inspector-temuco":      {"rol": "NO", "deriva": "Convivencia"},
+            "convivencia-temuco":    {"rol": "SÍ"},
+            "director-temuco":       {"rol": "NO", "deriva": "Convivencia"},
+            "representante-temuco":  {"rol": "NO", "deriva": "Convivencia"},
+        },
+        "debe_incluir": [],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
+        "criterios_propietario": [
+            "Activa el protocolo RICE de bullying/acoso escolar",
+            "No activa denuncia penal (bullying sin violencia física)",
+            "Propone contención para la víctima y proceso formativo para los agresores",
+            "Incluye plan de seguimiento y notificación a apoderados",
+        ],
+    },
+    {
+        "id": "TX004", "suite": "cruce",
+        "titulo": "Renuncia voluntaria de docente — ¿quién gestiona el finiquito?",
+        "query": (
+            "La profesora de Lenguaje quiere renunciar voluntariamente a fin de mes. "
+            "Me pide que le informe cómo procede su finiquito y qué plazos de aviso "
+            "debe dar. ¿Desde qué estamento se maneja esto?"
+        ),
+        "slug_propietario": "representante-temuco",
+        "esperado_por_slug": {
+            "utp-temuco":            {"rol": "NO", "deriva": "Representante Legal"},
+            "inspector-temuco":      {"rol": "NO", "deriva": "Representante Legal"},
+            "convivencia-temuco":    {"rol": "NO", "deriva": "Representante Legal"},
+            "director-temuco":       {"rol": "NO", "deriva": "Representante Legal"},
+            "representante-temuco":  {"rol": "SÍ"},
+        },
+        "debe_incluir": [],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
+        "criterios_propietario": [
+            "Aborda el proceso de renuncia voluntaria y finiquito",
+            "Menciona Código del Trabajo o Estatuto Docente sin inventar artículos específicos",
+            "No activa urgencia penal",
+            "Clarifica los plazos de aviso previo aplicables",
+        ],
+    },
+    {
+        "id": "TX005", "suite": "cruce",
+        "titulo": "Apoderado amenaza a docente — coordinación multi-estamento",
+        "query": (
+            "Un apoderado llegó al colegio agresivo y le gritó al profesor de Historia "
+            "frente a los estudiantes: 'si no cambia la nota de mi hijo le va a pesar'. "
+            "El profesor está muy alterado y pide que se haga algo. ¿Cómo actuamos?"
+        ),
+        "slug_propietario": "director-temuco",
+        # Inspector y Convivencia tienen competencia parcial — también pueden decir SÍ
+        "slugs_competencia_parcial": ["inspector-temuco", "convivencia-temuco"],
+        "esperado_por_slug": {
+            "utp-temuco":            {"rol": "NO", "deriva": "Director"},
+            "inspector-temuco":      {"rol": "SÍ_O_NO", "deriva": "Director"},
+            "convivencia-temuco":    {"rol": "SÍ_O_NO", "deriva": "Director"},
+            "director-temuco":       {"rol": "SÍ"},
+            "representante-temuco":  {"rol": "NO", "deriva": "Director"},
+        },
+        "debe_incluir": [],
+        "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
+        "criterios_propietario": [
+            "Coordina la respuesta institucional ante el apoderado agresivo",
+            "No activa denuncia penal obligatoria (amenaza verbal sin violencia física)",
+            "Involucra a Inspector General y Convivencia en el manejo del caso",
+            "Protege al docente afectado y documenta el incidente",
+        ],
+    },
+]
+
+
+TODOS_LOS_CASOS = CASOS_UTP + CASOS_DERIVACION + CASOS_CRUCE
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -353,6 +498,21 @@ Responde ÚNICAMENTE con JSON válido:
 "articulos_verificados":["lista de artículos que SÍ aparecen en el RAG"],\
 "veredicto_general":"PASS o WARN o FAIL",\
 "resumen":"max 25 palabras"}}"""
+
+
+def extraer_decision(respuesta: str) -> str:
+    """Extrae SÍ/NO de la fila '¿Corresponde a tu rol?' del PASO 1."""
+    match = re.search(
+        r'Corresponde a tu rol[^\|]*\|\s*(S[ÍI]|SI|s[íi]|si|NO|No|no)\b',
+        respuesta, re.IGNORECASE | re.DOTALL
+    )
+    if match:
+        val = match.group(1).strip().upper()
+        return 'SÍ' if val in ('SÍ', 'SI', 'SÌ') else 'NO'
+    # Fallback: si dice "Derivo este caso" en los primeros 200 chars → NO
+    if 'erivo este caso' in respuesta[:300]:
+        return 'NO'
+    return '?'
 
 
 def evaluar_con_juez(respuesta: str, rag_context: str, criterios: list,
@@ -399,7 +559,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--caso', type=str, default=None)
         parser.add_argument('--slug', type=str, default=None)
-        parser.add_argument('--suite', type=str, default=None, choices=['utp', 'derivacion'])
+        parser.add_argument('--suite', type=str, default=None, choices=['utp', 'derivacion', 'cruce'])
         parser.add_argument('--sin-juez', action='store_true')
 
     def handle(self, *args, **options):
@@ -421,7 +581,14 @@ class Command(BaseCommand):
         lineas = [f"# Eval Report — {timestamp}\n\n"]
         resumen = []
 
-        for caso in casos:
+        # Separar cruce de los demás
+        casos_regulares = [c for c in casos if c['suite'] != 'cruce']
+        casos_cruce = [c for c in casos if c['suite'] == 'cruce']
+
+        for caso in casos_cruce:
+            self._eval_cruce(caso, lineas, resumen, options)
+
+        for caso in casos_regulares:
             self.stdout.write(f"\n▶ {caso['id']} — {caso['titulo']}")
 
             try:
@@ -536,3 +703,187 @@ class Command(BaseCommand):
             f.writelines(lineas)
 
         self.stdout.write(self.style.SUCCESS(f"\n✅ Reporte: {output_path}"))
+
+    def _eval_cruce(self, caso, lineas, resumen, options):
+        """Evalúa un caso cruce contra múltiples asistentes de Temuco."""
+        self.stdout.write(f"\n▶ {caso['id']} — {caso['titulo']}")
+        self.stdout.write(f"  Suite: cruce | {caso['id']} | evaluando {len(SLUGS_TEMUCO)} roles...")
+
+        propietario_slug = caso['slug_propietario']
+        resultados_por_slug = {}
+
+        for slug in SLUGS_TEMUCO:
+            try:
+                assistant = AIAssistant.objects.get(slug=slug)
+            except AIAssistant.DoesNotExist:
+                resultados_por_slug[slug] = {"error": f"Asistente {slug} no encontrado"}
+                continue
+
+            try:
+                rag_ctx = get_relevant_chunks(assistant, caso['query']) or ""
+            except Exception as e:
+                rag_ctx = f"ERROR RAG: {e}"
+
+            messages = [{"role": "user", "content": caso['query']}]
+            try:
+                resp = call_deepseek_ai(assistant, messages, caso['query'])
+            except Exception as e:
+                resp = f"ERROR: {e}"
+
+            decision = extraer_decision(resp)
+            esperado = caso['esperado_por_slug'].get(slug, {})
+            rol_esperado = esperado.get('rol', '?')
+            deriva_esperada = esperado.get('deriva', None)
+
+            # Determinar si la respuesta es correcta
+            if rol_esperado == 'SÍ':
+                decision_ok = decision == 'SÍ'
+                deriva_ok = None  # no aplica
+            elif rol_esperado == 'NO':
+                decision_ok = decision == 'NO'
+                deriva_ok = (deriva_esperada.lower() in resp.lower()) if deriva_esperada else None
+            elif rol_esperado == 'SÍ_O_NO':
+                decision_ok = decision in ('SÍ', 'NO')  # ambas aceptables
+                deriva_ok = None
+            else:
+                decision_ok = False
+                deriva_ok = None
+
+            rag_ok = bool(rag_ctx and not rag_ctx.startswith("No ") and not rag_ctx.startswith("ERROR"))
+
+            # Juez completo solo para el propietario
+            juicio = None
+            if slug == propietario_slug and not options['sin_juez'] and caso.get('criterios_propietario'):
+                self.stdout.write(f"    [{slug}] juez evaluando...")
+                juicio = evaluar_con_juez(
+                    resp, rag_ctx, caso['criterios_propietario'],
+                    'SÍ', None
+                )
+
+            resultados_por_slug[slug] = {
+                "decision": decision,
+                "decision_ok": decision_ok,
+                "deriva_esperada": deriva_esperada,
+                "deriva_ok": deriva_ok,
+                "rag_ok": rag_ok,
+                "rag_ctx": rag_ctx,
+                "respuesta": resp,
+                "juicio": juicio,
+                "rol_esperado": rol_esperado,
+            }
+
+            status = "✅" if decision_ok else "❌"
+            self.stdout.write(f"    [{slug}] dice {decision} {status} | RAG: {'✅' if rag_ok else '❌'}")
+
+        # ── Reporte cruce ──
+        lineas.append(f"## {caso['id']} — {caso['titulo']}\n\n")
+        lineas.append(f"**Query:** {caso['query'][:200]}...\n\n" if len(caso['query']) > 200 else f"**Query:** {caso['query']}\n\n")
+        lineas.append(f"**Propietario esperado:** `{propietario_slug}`\n\n")
+
+        # Matriz de resultados
+        lineas.append("### Matriz de derivación\n\n")
+        lineas.append("| Asistente | ¿Corresponde? | Esperado | Correcto | Deriva hacia | RAG |\n")
+        lineas.append("|---|---|---|---|---|---|\n")
+
+        todos_ok = True
+        for slug in SLUGS_TEMUCO:
+            r = resultados_por_slug.get(slug, {})
+            if "error" in r:
+                lineas.append(f"| {slug} | ❓ | — | ❌ | — | ❌ |\n")
+                continue
+            decision = r['decision']
+            decision_ok = r['decision_ok']
+            deriva_esp = r['deriva_esperada'] or '—'
+            deriva_ok = r['deriva_ok']
+            rag_ok = r['rag_ok']
+
+            # Símbolo de corrección de derivación
+            if deriva_ok is None:
+                deriva_sym = ''
+            elif deriva_ok:
+                deriva_sym = '✅'
+            else:
+                deriva_sym = '❌'
+                todos_ok = False
+
+            correcta = "✅" if decision_ok else "❌"
+            if not decision_ok:
+                todos_ok = False
+
+            propietario_marker = " 👑" if slug == propietario_slug else ""
+            lineas.append(f"| `{slug}`{propietario_marker} | {decision} | {r['rol_esperado']} | {correcta} | {deriva_esp} {deriva_sym} | {'✅' if rag_ok else '❌'} |\n")
+
+        lineas.append("\n")
+
+        # Evaluación detallada del propietario
+        prop_result = resultados_por_slug.get(propietario_slug, {})
+        if prop_result and not prop_result.get("error"):
+            lineas.append(f"### Evaluación del propietario (`{propietario_slug}`)\n\n")
+
+            # Checks básicos del propietario
+            prop_resp = prop_result['respuesta']
+            checks_ok = []
+            checks_fail = []
+            for term in caso.get('debe_incluir', []):
+                if term.lower() in prop_resp.lower():
+                    checks_ok.append(f"✅ Incluye '{term}'")
+                else:
+                    checks_fail.append(f"❌ FALTA '{term}'")
+            for term in caso.get('no_debe_incluir', []):
+                if term not in prop_resp:
+                    checks_ok.append(f"✅ No incluye '{term[:30]}'")
+                else:
+                    checks_fail.append(f"❌ INCLUYE (no debe) '{term[:30]}'")
+            for c in checks_ok + checks_fail:
+                lineas.append(f"- {c}\n")
+            lineas.append("\n")
+
+            juicio = prop_result.get('juicio')
+            if juicio:
+                vg = juicio.get('veredicto_general', 'ERROR')
+                emoji_j = {"PASS": "✅", "WARN": "⚠️", "FAIL": "❌"}.get(vg, "❓")
+                lineas.append(f"**Juez:** {emoji_j} {vg} — {juicio.get('resumen', '')}\n\n")
+
+                inventados = juicio.get('articulos_inventados', [])
+                verificados = juicio.get('articulos_verificados', [])
+                if verificados:
+                    lineas.append(f"**Artículos con respaldo RAG:** {', '.join(verificados)}\n\n")
+                if inventados:
+                    lineas.append(f"**Artículos sin respaldo:** {', '.join(inventados)}\n\n")
+                else:
+                    lineas.append("**Artículos sin respaldo:** ninguno ✅\n\n")
+
+                lineas.append("**Criterios detallados:**\n")
+                for c in juicio.get('criterios', []):
+                    e = "✅" if c.get('resultado') == 'PASS' else "❌"
+                    lineas.append(f"- {e} {c.get('criterio', '')} — *{c.get('razon', '')}*\n")
+                lineas.append("\n")
+
+            # Preview respuesta propietario
+            prev = prop_resp[:1000] + "...[truncado]" if len(prop_resp) > 1000 else prop_resp
+            lineas.append(f"<details><summary>Respuesta del propietario (preview)</summary>\n\n```\n{prev}\n```\n</details>\n\n")
+
+        # Respuestas de no-propietarios que fallaron
+        for slug in SLUGS_TEMUCO:
+            if slug == propietario_slug:
+                continue
+            r = resultados_por_slug.get(slug, {})
+            if r and not r.get('error') and not r.get('decision_ok'):
+                lineas.append(f"### ⚠️ Fallo: `{slug}` dijo '{r['decision']}' (esperado: {r['rol_esperado']})\n\n")
+                prev = r['respuesta'][:600] + "...[truncado]" if len(r['respuesta']) > 600 else r['respuesta']
+                lineas.append(f"```\n{prev}\n```\n\n")
+
+        lineas.append("---\n\n")
+
+        # Resumen para tabla global
+        prop_juicio = prop_result.get('juicio') if prop_result else None
+        resumen.append({
+            "id": caso['id'], "suite": "cruce",
+            "basico": "✅" if todos_ok else "❌",
+            "rag": "✅",
+            "juez": prop_juicio.get('veredicto_general', '—') if prop_juicio else '—',
+            "inventados": prop_juicio.get('articulos_inventados', []) if prop_juicio else [],
+        })
+
+        juez_str = prop_juicio.get('veredicto_general', '—') if prop_juicio else '—'
+        self.stdout.write(f"  Cruce: {'✅ todos correctos' if todos_ok else '❌ hay fallos'} | Juez propietario: {juez_str}")
