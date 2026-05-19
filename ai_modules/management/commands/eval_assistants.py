@@ -502,14 +502,15 @@ Responde ÚNICAMENTE con JSON válido:
 
 def extraer_decision(respuesta: str) -> str:
     """Extrae SÍ/NO de la fila '¿Corresponde a tu rol?' del PASO 1."""
+    # Acepta negrita markdown (**SÍ**, **NO**) además del texto plano
     match = re.search(
-        r'Corresponde a tu rol[^\|]*\|\s*(S[ÍI]|SI|s[íi]|si|NO|No|no)\b',
+        r'Corresponde a tu rol[^\|]*\|\s*\*{0,2}\s*(S[ÍI]|SI|s[íi]|si|NO|No|no)\b',
         respuesta, re.IGNORECASE | re.DOTALL
     )
     if match:
         val = match.group(1).strip().upper()
         return 'SÍ' if val in ('SÍ', 'SI', 'SÌ') else 'NO'
-    # Fallback: si dice "Derivo este caso" en los primeros 200 chars → NO
+    # Fallback: si dice "Derivo este caso" en los primeros 300 chars → NO
     if 'erivo este caso' in respuesta[:300]:
         return 'NO'
     return '?'
