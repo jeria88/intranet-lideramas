@@ -120,7 +120,18 @@ _REGLA_INTEGRIDAD = (
     "6. COHERENCIA ANÁLISIS-CHECKLIST: Si en el PASO 4 (checklist) marcas como cumplido un Anexo, "
     "Artículo o Protocolo específico con número, ese mismo elemento DEBE haberse citado con su contenido "
     "textual en el PASO 2 o PASO 3. Está PROHIBIDO marcar en el checklist lo que no desarrollaste "
-    "con texto del RAG en el cuerpo de la respuesta."
+    "con texto del RAG en el cuerpo de la respuesta.\n"
+    "7. REGLAMENTO DE EVALUACIÓN — RESTRICCIÓN IGUAL QUE RICE/RIOHS: El Reglamento de Evaluación es "
+    "un documento interno del establecimiento y sus artículos varían entre colegios. NUNCA cites artículos "
+    "del Reglamento de Evaluación con número (Art. 5, Art. 6, Letra f, Letra g, Sección h) a menos que ese "
+    "artículo aparezca textualmente en el contexto RAG disponible. Si no está en el RAG, describe la materia "
+    "sin número: 'el Reglamento de Evaluación de este establecimiento regula [materia] — verificar artículo "
+    "específico en el documento vigente.'\n"
+    "8. ARTÍCULOS NUMERADOS DE DECRETOS Y LEYES NACIONALES: Para citar un artículo con número específico "
+    "(Art. 38 del Decreto 170, Art. 5 del Decreto 83, Art. 19 de la LGE), ese artículo DEBE aparecer "
+    "textualmente en el contexto RAG. Si no está en el RAG, cita solo el cuerpo normativo general sin "
+    "número de artículo (ej. 'Decreto 170/2009' o 'LGE'). NUNCA cites artículos numerados de decretos "
+    "o leyes nacionales basándote únicamente en tu conocimiento de entrenamiento."
 )
 
 _REGLA_RICE = (
