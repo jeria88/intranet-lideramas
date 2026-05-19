@@ -132,11 +132,13 @@ _REGLA_INTEGRIDAD = (
     "artículo aparezca textualmente en la documentación entregada. Si no está disponible, describe la materia"
     "sin número: 'el Reglamento de Evaluación de este establecimiento regula [materia] — verificar artículo "
     "específico en el documento vigente.'\n"
-    "8. ARTÍCULOS NUMERADOS DE DECRETOS Y LEYES NACIONALES: Para citar un artículo con número específico "
-    "(Art. 38 del Decreto 170, Art. 5 del Decreto 83, Art. 19 de la LGE), ese artículo DEBE aparecer "
-    "textualmente en la documentación entregada. Si no está disponible, cita solo el cuerpo normativo general sin"
-    "número de artículo (ej. 'Decreto 170/2009' o 'LGE'). NUNCA cites artículos numerados de decretos "
-    "o leyes nacionales basándote únicamente en tu conocimiento previo."
+    "8. ARTÍCULOS NUMERADOS — REGLA DE CITA VERBATIM: Para incluir un número de artículo en tu respuesta "
+    "(Art. 38, Artículo 5, Art. 32°, Anexo 4), DEBES poder copiar textualmente al menos la primera "
+    "oración de ese artículo tal como aparece en la documentación recibida. "
+    "Si no puedes copiarlo porque no tienes el texto, cita solo el nombre del documento: "
+    "'el Decreto 170/2009', 'el RIOHS', 'el Reglamento de Evaluación'. "
+    "Esta regla aplica en TODO el texto de tu respuesta: tabla, sección A, sección B y sección C. "
+    "NUNCA escribas un número de artículo que no puedas citar textualmente."
 )
 
 _REGLA_RICE = (
@@ -343,10 +345,10 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | Si el RIOHS aparece en el contexto: citar artículo real. Si no: "Verificar en RIOHS vigente" |
-| Artículos RICE | Si el RICE aparece en el contexto: citar artículo real. Si no: "Verificar en RICE vigente" |
+| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Protocolo RICE | Si aplica RICE: ¿cuál protocolo debe aplicarse? Especifica N° |
-| Artículos Regl. Evaluación | Si aparece en el contexto: citar artículo real. Si no: "Verificar en Regl. de Evaluación vigente" |
+| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -375,10 +377,10 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | Si el RIOHS aparece en el contexto: citar artículo real. Si no: "Verificar en RIOHS vigente" |
-| Artículos RICE | Si el RICE aparece en el contexto: citar artículo real. Si no: "Verificar en RICE vigente" |
-| Protocolo RICE | ¿Cuál protocolo debe aplicarse? Especifica N° |
-| Artículos Regl. Evaluación | Artículos del Reglamento de Evaluación aplicables (derivar a UTP) |
+| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Protocolo RICE | ¿Cuál protocolo corresponde? Describe el tipo (maltrato, acoso, urgencia, etc.) sin número, salvo que el número aparezca literalmente en la documentación recibida. |
+| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -421,10 +423,10 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | Si el RIOHS aparece en el contexto: citar artículo real. Si no: "Verificar en RIOHS vigente" |
-| Artículos RICE | Si el RICE aparece en el contexto: citar artículo real. Si no: "Verificar en RICE vigente" |
+| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Protocolo RICE | Si aplica RICE: ¿cuál protocolo debe aplicarse? Especifica N° |
-| Artículos Regl. Evaluación | Si aparece en el contexto: citar artículo real. Si no: "Verificar en Regl. de Evaluación vigente" |
+| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -469,9 +471,9 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | Si el RIOHS aparece en el contexto: citar artículo real. Si no: "Verificar en RIOHS vigente" |
-| Artículos RICE | Si el RICE aparece en el contexto: citar artículo real. Si no: "Verificar en RICE vigente" |
-| Artículos Regl. Evaluación | Si aparece en el contexto: citar artículo real. Si no: "Verificar en Regl. de Evaluación vigente" |
+| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -510,9 +512,9 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | Procedimiento según Manual de Cuentas | Cómo proceder según el Manual de Cuentas vigente |
 | Normativa laboral | Normativa laboral que regula el caso |
 | Normativa educativa | Normativa educativa que regula o sanciona el caso |
-| Artículos RIOHS | Artículos del RIOHS aplicables (articular con Director e Inspector General) |
-| Artículos RICE | Artículos del RICE aplicables (derivar a Convivencia Educativa) |
-| Artículos Regl. Evaluación | Artículos del Reglamento de Evaluación aplicables (derivar a UTP) |
+| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe la obligación que regula, sin número de artículo. |
+| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación que corresponde, sin número de artículo. |
+| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 

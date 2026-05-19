@@ -4,79 +4,144 @@ from django.conf import settings
 from .utils import get_relevant_chunks
 
 
+_DOC_KEYWORDS = {
+    # clave canónica → palabras que identifican ese documento en el contexto
+    'riohs':      ['RIOHS', 'riohs'],
+    'rice':       ['RICE', 'rice'],
+    'regl_eval':  ['REGLAMENTO DE EVALUACIÓN', 'Reglamento de Evaluación', 'Regl. Evaluación', 'reglamento de evaluación'],
+    'dto170':     ['DTO-170', 'Decreto-170', 'Decreto 170', 'decreto 170'],
+    'dto83':      ['Decreto-83', 'Decreto 83', 'decreto 83'],
+    'dto67':      ['Decreto-67', 'Decreto 67', 'decreto 67'],
+}
+
+# Aliases de documento en el texto de la RESPUESTA → clave canónica
+_DOC_ALIAS = {
+    'riohs': 'riohs',
+    'rice': 'rice',
+    'reglamento de evaluación': 'regl_eval',
+    'reglamento de evaluacion': 'regl_eval',
+    'regl. de evaluación': 'regl_eval',
+    'regl. evaluación': 'regl_eval',
+    'decreto 170': 'dto170',
+    'decreto 170/2009': 'dto170',
+    'dto-170': 'dto170',
+    'decreto 83': 'dto83',
+    'decreto 83/2015': 'dto83',
+    'decreto 67': 'dto67',
+    'decreto 67/2018': 'dto67',
+}
+
+
+def _construir_whitelist_doc(relevant_context: str) -> dict:
+    """
+    Retorna {doc_key: set_of_article_numbers} con los artículos
+    verificados por documento dentro del contexto recuperado.
+    """
+    whitelist: dict = {k: set() for k in _DOC_KEYWORDS}
+    # Buscar bloques [Doc: ...] Art.N
+    for block in re.split(r'\[Doc:', relevant_context):
+        if not block.strip():
+            continue
+        header = block[:120].lower()
+        doc_key = None
+        for key, keywords in _DOC_KEYWORDS.items():
+            if any(kw.lower() in header for kw in keywords):
+                doc_key = key
+                break
+        if doc_key is None:
+            continue
+        nums = re.findall(r'Art(?:ículo)?\.?\s*(\d+)[°º]?\b', block, re.IGNORECASE)
+        for n in nums:
+            whitelist[doc_key].add(n)
+        anexos = re.findall(r'Anexo\s*(\d+)', block, re.IGNORECASE)
+        for a in anexos:
+            whitelist[doc_key].add(f'A{a}')   # prefijo 'A' para distinguir de artículos
+    return whitelist
+
+
+def _resolver_doc_key(doc_fragment: str) -> str | None:
+    """Mapea un nombre de documento (del texto de respuesta) a su clave canónica."""
+    low = doc_fragment.lower().strip()
+    for alias, key in _DOC_ALIAS.items():
+        if alias in low:
+            return key
+    return None
+
+
 def _filtrar_articulos_no_rag(respuesta: str, relevant_context: str) -> str:
     """
-    Elimina de la respuesta cualquier número de artículo que no aparezca
-    literalmente en el contexto RAG. Si el artículo va con nombre de documento
-    ("Art. 5 del Reglamento de Evaluación"), mantiene solo el nombre.
-    Si va solo ("Art. 32°"), lo elimina.
+    Post-procesamiento document-aware: elimina de la respuesta artículos
+    cuyo número no aparezca en el bloque [Doc: X] correspondiente del contexto.
+    - "Art. 32° del RIOHS" → se verifica que el nº 32 esté en chunks RIOHS.
+    - "Art. 32°" (sin doc) → se verifica en todos los docs; si no está → elimina.
     """
     if not relevant_context or not respuesta:
         return respuesta
 
-    # Construir whitelist de números verificados en el RAG
-    # \s* para capturar tanto "Art. 26" como "Art.26"
-    nums_rag = set(re.findall(
-        r'Art(?:ículo)?\.?\s*(\d+)[°º]?\b',
-        relevant_context, re.IGNORECASE
-    ))
-    anexos_rag = set(re.findall(r'Anexo\s*(\d+)', relevant_context, re.IGNORECASE))
+    whitelist = _construir_whitelist_doc(relevant_context)
+    # Whitelist plana (todos los docs combinados) para artículos sin doc explícito
+    nums_global: set = set()
+    for nums in whitelist.values():
+        nums_global |= {n for n in nums if not n.startswith('A')}
+    anexos_global: set = {n[1:] for vals in whitelist.values() for n in vals if n.startswith('A')}
 
-    # Patrón principal: "Art. X°" / "Artículo X" seguido opcionalmente de "del Documento"
-    # Captura: (prefijo)(número)(sufijo)(del Documento)?
     PAT_ART = re.compile(
         r'(Art(?:ículos?)?\.?\s+)'
         r'(\d+)'
         r'([°º]?(?:\s*bis)?)'
-        r'((?:\s*(?:y|e)\s*\d+[°º]?)*)'          # rangos adicionales: "y 6", "y 7"
-        r'((?:\s+(?:del?|de\s+la|de\s+los)\s+[A-ZÁÉÍÓÚÑ\w][^,\.\n;\|]{2,50})?)',
+        r'((?:\s*(?:y|e)\s*\d+[°º]?)*)'
+        r'((?:\s+(?:del?|de\s+la|de\s+los)\s+[A-ZÁÉÍÓÚÑ\w][^,\.\n;\|]{2,60})?)',
         re.IGNORECASE,
     )
     PAT_ANEXO = re.compile(
         r'(Anexo\s+)(\d+)'
-        r'((?:\s+(?:del?|de\s+la)\s+[A-ZÁÉÍÓÚÑ\w][^,\.\n;\|]{2,50})?)',
+        r'((?:\s+(?:del?|de\s+la)\s+[A-ZÁÉÍÓÚÑ\w][^,\.\n;\|]{2,60})?)',
         re.IGNORECASE,
     )
 
-    def _doc_name(doc_fragment: str) -> str:
-        """Quita el conector 'del/de la/de los' y retorna solo el nombre."""
-        return re.sub(
-            r'^\s*(?:del?|de\s+la|de\s+los)\s+', '', doc_fragment, flags=re.IGNORECASE
-        ).strip()
+    def _doc_name(s: str) -> str:
+        return re.sub(r'^\s*(?:del?|de\s+la|de\s+los)\s+', '', s, flags=re.IGNORECASE).strip()
 
     def _reemplazar_art(m: re.Match) -> str:
         num = m.group(2)
-        if num in nums_rag:
-            return m.group(0)           # verificado → sin cambio
-        doc = _doc_name(m.group(5)) if m.group(5) else ''
-        if doc:
-            return doc                  # "Art. 5 del Reglamento" → "Reglamento"
-        # Sin doc: dejar referencia genérica para no romper la oración
+        doc_frag = m.group(5) or ''
+        doc_name = _doc_name(doc_frag)
+
+        if doc_name:
+            doc_key = _resolver_doc_key(doc_name)
+            if doc_key and num in whitelist.get(doc_key, set()):
+                return m.group(0)       # verificado en ese documento específico
+            # Número no verificado para ese documento
+            return doc_name             # mantener solo el nombre del documento
+
+        # Sin documento explícito: verificar en whitelist global
+        if num in nums_global:
+            return m.group(0)
         return 'el artículo correspondiente'
 
     def _reemplazar_anexo(m: re.Match) -> str:
         num = m.group(2)
-        if num in anexos_rag:
+        doc_frag = m.group(3) or ''
+        doc_name = _doc_name(doc_frag)
+        if doc_name:
+            doc_key = _resolver_doc_key(doc_name)
+            if doc_key and f'A{num}' in whitelist.get(doc_key, set()):
+                return m.group(0)
+            return doc_name
+        if num in anexos_global:
             return m.group(0)
-        doc = _doc_name(m.group(3)) if m.group(3) else ''
-        if doc:
-            return doc
         return 'el anexo correspondiente'
 
     respuesta = PAT_ART.sub(_reemplazar_art, respuesta)
     respuesta = PAT_ANEXO.sub(_reemplazar_anexo, respuesta)
-
-    # Limpiar artefactos de puntuación y espacios dobles
     respuesta = re.sub(r' {2,}', ' ', respuesta)
-    # Doble artículo: "El el", "La la", "Los los", etc.
     respuesta = re.sub(r'\b(el|la|los|las)\s+\1\b', r'\1', respuesta, flags=re.IGNORECASE)
-    respuesta = re.sub(r'\| {0,3}\|', '| — |', respuesta)   # celdas de tabla vacías
+    respuesta = re.sub(r'\| {0,3}\|', '| — |', respuesta)
     respuesta = re.sub(r'(?m)^\s*[\|]\s*[\|]\s*$', '', respuesta)
-
     return respuesta
 
 
-def call_deepseek_ai(assistant, messages_history, user_query, temperature=1.0, attached_content=None):
+def call_deepseek_ai(assistant, messages_history, user_query, temperature=0.3, attached_content=None):
     """
     Realiza una llamada a la API de DeepSeek inyectando el contexto RAG
     y el historial de la conversación.
