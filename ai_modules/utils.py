@@ -334,6 +334,8 @@ def get_relevant_chunks(assistant, query, top_n=10):
     # Conteo para trigger de caché
     db_count_trigger = AIKnowledgeChunk.objects.using('knowledge_base').filter(filter_q).exclude(embedding__isnull=True).count()
 
+    cache_ready = False
+
     if cached and cached['meta']['count'] == db_count_trigger:
         ids = cached['ids']
         doc_names = cached['doc_names']
@@ -350,8 +352,8 @@ def get_relevant_chunks(assistant, query, top_n=10):
                 ids = meta['ids']
                 doc_names = meta['doc_names']
                 indices = meta['indices']
-                # mmap_mode='r' es CLAVE: Mantiene el archivo en disco y solo carga lo que se usa en el producto punto
-                matrix = np.load(matrix_path, mmap_mode='r')
+                # Leer como memmap (binario crudo, sin header .npy)
+                matrix = np.memmap(matrix_path, dtype='float32', mode='r', shape=(meta['count'], 1536))
                 
                 # Pre-calcular el priority_mask una sola vez para ahorrar CPU
                 p_patterns = ["2.-Ley-21809", "Manual-de-cuentas-2026"]
@@ -434,9 +436,9 @@ def get_relevant_chunks(assistant, query, top_n=10):
             with open(meta_path, 'w') as f:
                 json.dump(meta_payload, f)
             
-            # Recargar ahora con mmap para liberar la RAM usada en la reconstrucción
-            matrix = np.load(matrix_path, mmap_mode='r')
-            
+            # Recargar como read-only memmap (mismo formato binario crudo, no .npy)
+            matrix = np.memmap(matrix_path, dtype='float32', mode='r', shape=(db_count, 1536))
+
             p_patterns = ["2.-Ley-21809", "Manual-de-cuentas-2026"]
             priority_mask = np.zeros(len(doc_names), dtype=bool)
             for pattern in p_patterns:
@@ -450,9 +452,15 @@ def get_relevant_chunks(assistant, query, top_n=10):
                 'meta': meta_payload,
                 'priority_mask': priority_mask
             }
-            gc.collect() 
+            gc.collect()
         except Exception as e:
             print(f"Advertencia: No se pudo guardar caché en disco: {e}")
+            # matrix fue del-eada arriba — recargar desde el archivo memmap ya escrito
+            matrix = np.memmap(matrix_path, dtype='float32', mode='r', shape=(db_count, 1536))
+            p_patterns = ["2.-Ley-21809", "Manual-de-cuentas-2026"]
+            priority_mask = np.zeros(db_count, dtype=bool)
+            for pattern in p_patterns:
+                priority_mask |= np.array([pattern in str(d) for d in doc_names])
 
     # 4. Cálculo de Similitud
     q_vec = np.array(query_embedding, dtype=np.float32)

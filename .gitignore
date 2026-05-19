@@ -16,3 +16,4 @@ CONVERSATION_LOG_REPRESENTANTE.md
 .venv/
 scratch/
 implementation_plan.md
+ai_modules/cache/
