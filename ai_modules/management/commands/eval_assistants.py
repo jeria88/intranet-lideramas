@@ -496,9 +496,9 @@ CRITERIOS A EVALUAR:
 {criterios}
 
 TAREA ADICIONAL — VERIFICACIÓN DE CITAS:
-Revisa si los artículos o anexos específicos citados en la respuesta (ej: "Art. 32°", "Anexo 13", \
-"Art. 94") aparecen efectivamente en el contexto RAG. Si el asistente cita artículos que NO \
-están en el RAG, son potencialmente inventados.
+Revisa si los artículos o anexos específicos citados en la respuesta aparecen efectivamente \
+en el contexto RAG. Si el asistente cita artículos con número que NO aparecen literalmente \
+en el contexto RAG, son potencialmente inventados. Solo reporta los que veas en la respuesta.
 
 Responde ÚNICAMENTE con JSON válido:
 {{"criterios":[{{"criterio":"...","resultado":"PASS o FAIL","razon":"max 15 palabras"}},...],\
