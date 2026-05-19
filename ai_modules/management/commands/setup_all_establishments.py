@@ -169,6 +169,24 @@ _ORGANIGRAMA_DERIVACION = (
     "derivación a otros estamentos para casos fuera de su competencia."
 )
 
+_REGLA_CONCLUSION = (
+    "\n\nREGLA OBLIGATORIA — CONCLUSIÓN Y POSICIÓN:\n"
+    "Cuando el usuario haga una pregunta directa (¿puede hacer esto?, ¿corresponde anular la nota?, "
+    "¿es válida la calificación?) o formule una solicitud concreta (pido que se anule, solicito que "
+    "se ordene, pido respaldo), tu respuesta DEBE:\n"
+    "1. RESPONDER DIRECTAMENTE la pregunta o solicitud con una posición clara: SÍ o NO, con fundamento "
+    "normativo. No uses evasivas como 'depende', 'habría que ver', 'se podría analizar'.\n"
+    "2. USAR LENGUAJE IMPERATIVO en el plan de acción: 'La calificación DEBE anularse', "
+    "'El docente DEBE aplicar nueva evaluación en 48 horas', 'La carpeta DEBE ser calificada'. "
+    "Prohibido el condicional sin fundamento: 'podría', 'se sugiere', 'eventualmente'.\n"
+    "3. Si existe incumplimiento verificado de PACI, adecuación curricular o Reglamento de "
+    "Evaluación, enunciar la consecuencia directa: 'La nota aplicada en condiciones de incumplimiento "
+    "del PACI no tiene validez normativa y debe dejarse sin efecto'.\n"
+    "4. Si hay una conducta de un estudiante con NEE que puede explicarse por su diagnóstico "
+    "(ansiedad, impulsividad, baja memoria operativa, desregulación), señalarlo explícitamente "
+    "como contexto atenuante antes de aplicar cualquier medida disciplinaria."
+)
+
 _RECORDATORIO_FORMATO = (
     "\n\nRECORDATORIO FINAL DE FORMATO:\n"
     "• Si '¿Corresponde a tu rol?' en PASO 1 es NO → DETENTE. "
@@ -209,6 +227,7 @@ _SUFIJO_COMUN = (
     + _REGLA_RIOHS
     + _REGLA_OPD_OLN
     + _ORGANIGRAMA_DERIVACION
+    + _REGLA_CONCLUSION
     + _RECORDATORIO_FORMATO
     + _DISCLAIMER
 )
