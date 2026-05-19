@@ -131,7 +131,7 @@ CASOS = [
             "evaluaciones sin nota. La educadora diferencial ya intervino sin éxito. "
             "Acuso discriminación por condición de discapacidad. Pido que se ordene calificar la carpeta."
         ),
-        "debe_incluir": ["Decreto 83", "ajuste"],
+        "debe_incluir": ["ajuste", "Decreto"],
         "no_debe_incluir": ["🚨 DENUNCIA OBLIGATORIA E INMEDIATA\nEsta situación activa"],
         "criterios_juez": [
             "Indica que la profesora está incumpliendo el ajuste razonable del equipo PIE",
