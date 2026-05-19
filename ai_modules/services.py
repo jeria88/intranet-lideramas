@@ -116,9 +116,9 @@ def call_deepseek_ai(assistant, messages_history, user_query, temperature=1.0, a
         )
     if relevant_context:
         context_parts.append(
-            "### CONTEXTO DOCUMENTAL (RAG):\n"
+            "### DOCUMENTACIÓN DE REFERENCIA:\n"
             f"{relevant_context}\n"
-            "--- FIN DEL CONTEXTO ---"
+            "--- FIN DE LA DOCUMENTACIÓN ---"
         )
 
     if context_parts:

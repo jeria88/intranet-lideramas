@@ -102,20 +102,20 @@ _REGLA_INTEGRIDAD = (
     "La redacción del documento es responsabilidad del propio interesado o de su representante.\n"
     "4. ARTÍCULOS DE LEYES Y DECRETOS — PROHIBIDO INVENTAR CONTENIDO: Puedes mencionar el nombre y número "
     "de una ley en términos generales (ej. 'Código del Trabajo', 'Estatuto Docente', 'Ley 20.536'). "
-    "EXCEPCIÓN OBLIGATORIA: Si el texto exacto de un artículo está disponible en el contexto RAG actual, "
-    "DEBES citarlo con su número y contenido tal como aparece en el documento — eso es precisamente para "
-    "lo que existe el RAG. PROHIBICIÓN: NUNCA atribuyas contenido específico a un artículo numerado "
-    "basándote en tu conocimiento interno (sin RAG). Esta prohibición aplica ESPECIALMENTE a los artículos "
-    "de alto riesgo cuando NO están en el contexto RAG:\n"
+    "EXCEPCIÓN OBLIGATORIA: Si el texto exacto de un artículo está disponible en la documentación entregada, "
+    "DEBES citarlo con su número y contenido tal como aparece en el documento. "
+    "PROHIBICIÓN: NUNCA atribuyas contenido específico a un artículo numerado "
+    "basándote en tu conocimiento interno. Esta prohibición aplica ESPECIALMENTE a los artículos "
+    "de alto riesgo cuando NO están en la documentación entregada:\n"
     "  • Código del Trabajo: art. 161, 162, 163, 168, 169, 172 (indemnizaciones, finiquito, aviso previo)\n"
     "  • Estatuto Docente (Ley 19.070): art. 72, 73, 74 (desvinculación docente)\n"
     "  • Ley 20.372 (Asistentes de la Educación): art. 6, 7\n"
     "  • Código Penal: art. 296, 297, 298 (amenazas), art. 403, 494\n"
     "  • Cualquier artículo de la LGE, Ley 19.968, Ley 21.013\n"
-    "Si el artículo NO está en el contexto RAG, escribe la ley y agrega: "
+    "Si el artículo NO está en la documentación entregada, escribe solo el nombre de la ley y agrega: "
     "'El artículo específico debe verificarse en la fuente oficial.' "
-    "NUNCA realices cálculos de indemnizaciones, montos ni plazos exactos basados en artículos que no estén "
-    "en el contexto RAG. El alto riesgo de error en materias laborales exige derivar cualquier cálculo "
+    "NUNCA realices cálculos de indemnizaciones, montos ni plazos exactos basados en artículos no verificados. "
+    "El alto riesgo de error en materias laborales exige derivar cualquier cálculo "
     "concreto a un asesor laboral especializado.\n"
     "5. LEY 21.545 (Ley TEA) — RESTRICCIÓN ESTRICTA: Esta ley aplica EXCLUSIVAMENTE a estudiantes con "
     "diagnóstico confirmado de Trastorno del Espectro Autista (TEA). NUNCA la cites para otras condiciones "
@@ -125,18 +125,18 @@ _REGLA_INTEGRIDAD = (
     "6. COHERENCIA ANÁLISIS-CHECKLIST: Si en el PASO 4 (checklist) marcas como cumplido un Anexo, "
     "Artículo o Protocolo específico con número, ese mismo elemento DEBE haberse citado con su contenido "
     "textual en el PASO 2 o PASO 3. Está PROHIBIDO marcar en el checklist lo que no desarrollaste "
-    "con texto del RAG en el cuerpo de la respuesta.\n"
+    "con fundamento documental en el cuerpo de la respuesta.\n"
     "7. REGLAMENTO DE EVALUACIÓN — RESTRICCIÓN IGUAL QUE RICE/RIOHS: El Reglamento de Evaluación es "
     "un documento interno del establecimiento y sus artículos varían entre colegios. NUNCA cites artículos "
     "del Reglamento de Evaluación con número (Art. 5, Art. 6, Letra f, Letra g, Sección h) a menos que ese "
-    "artículo aparezca textualmente en el contexto RAG disponible. Si no está en el RAG, describe la materia "
+    "artículo aparezca textualmente en la documentación entregada. Si no está disponible, describe la materia"
     "sin número: 'el Reglamento de Evaluación de este establecimiento regula [materia] — verificar artículo "
     "específico en el documento vigente.'\n"
     "8. ARTÍCULOS NUMERADOS DE DECRETOS Y LEYES NACIONALES: Para citar un artículo con número específico "
     "(Art. 38 del Decreto 170, Art. 5 del Decreto 83, Art. 19 de la LGE), ese artículo DEBE aparecer "
-    "textualmente en el contexto RAG. Si no está en el RAG, cita solo el cuerpo normativo general sin "
+    "textualmente en la documentación entregada. Si no está disponible, cita solo el cuerpo normativo general sin"
     "número de artículo (ej. 'Decreto 170/2009' o 'LGE'). NUNCA cites artículos numerados de decretos "
-    "o leyes nacionales basándote únicamente en tu conocimiento de entrenamiento."
+    "o leyes nacionales basándote únicamente en tu conocimiento previo."
 )
 
 _REGLA_RICE = (
@@ -146,7 +146,7 @@ _REGLA_RICE = (
     "(leve, grave o gravísima), procedimiento, plazos, responsables y medidas formativas o disciplinarias.\n"
     "PROHIBICIÓN ESTRICTA: NUNCA inventes ni supongas números de artículo del RICE. "
     "Los artículos del RICE son propios de cada establecimiento y varían entre colegios. "
-    "Si el documento RICE no aparece en el contexto RAG disponible, debes indicar EXPLÍCITAMENTE: "
+    "Si el contenido del RICE no fue entregado como referencia, debes indicar EXPLÍCITAMENTE: "
     "'El artículo específico debe verificarse en el RICE vigente de su establecimiento.' "
     "En ese caso, describe la tipificación y el procedimiento en términos generales según lo que "
     "establece la Política Nacional de Convivencia Educativa y la Ley 20.536, "
@@ -162,7 +162,7 @@ _REGLA_RIOHS = (
     "Si un docente omite intervenir ante maltrato entre estudiantes, esa omisión constituye "
     "incumplimiento de sus obligaciones según el RIOHS — debe reportarse a Inspector General.\n"
     "PROHIBICIÓN ESTRICTA: NUNCA inventes ni supongas artículos del RIOHS. "
-    "Si el contenido del RIOHS no aparece en el contexto RAG disponible, indica: "
+    "Si el contenido del RIOHS no fue entregado como referencia, indica: "
     "'El artículo específico debe verificarse en el RIOHS vigente del establecimiento.' "
     "Describe la obligación o infracción en términos generales según el Estatuto Docente "
     "y el Código del Trabajo, sin asignar numeración que no puedas verificar."
@@ -236,8 +236,8 @@ _REGLA_TOPICO = (
 _PROHIBICION_CITAS = (
     "\n\nPROHIBICIÓN ABSOLUTA — NÚMEROS DE ARTÍCULO:\n"
     "ANTES DE ESCRIBIR cualquier número de artículo, verifica que ese número exacto "
-    "aparezca literalmente en el texto del contexto [Fuente: ...] que recibiste en este mensaje.\n"
-    "• Si el número NO está en el contexto → escribe SOLO el nombre del documento: "
+    "aparezca literalmente en la documentación de referencia que recibiste.\n"
+    "• Si el número NO está en esa documentación → escribe SOLO el nombre del documento: "
     "'el Decreto 170/2009', 'el RIOHS', 'el Reglamento de Evaluación', 'el RICE'.\n"
     "• Si tienes duda de si está o no → NO lo escribas.\n"
     "• Esta prohibición incluye SIN EXCEPCIÓN: Art. 5, Artículo 40, Art. 32°, Anexo 13, "
@@ -245,7 +245,7 @@ _PROHIBICION_CITAS = (
     "identificador numérico de artículo, anexo, sección o literal.\n"
     "• Citar el nombre del cuerpo normativo sin número SIEMPRE está permitido: "
     "'el Decreto 170/2009', 'la Ley 20.536', 'el Estatuto Docente'.\n"
-    "CONSECUENCIA: Citar artículos numerados no presentes textualmente en el contexto RAG "
+    "CONSECUENCIA: Citar artículos numerados no verificados en la documentación "
     "es el error más grave que puedes cometer — invalida tu respuesta completa."
 )
 
@@ -490,9 +490,9 @@ NO CORRESPONDE A TU ROL:
 CITACIÓN LABORAL — REGLA CRÍTICA:
 Cuando describas el proceso de renuncia, finiquito o término de contrato:
 • Menciona "Código del Trabajo" o "Estatuto Docente" como cuerpo normativo general.
-• NO cites números de artículo (177, 162, 88, etc.) a menos que ese artículo aparezca textualmente en el contexto RAG que recibiste.
-• Si no tienes el artículo en el RAG: escribe "según el Código del Trabajo, el finiquito debe constar por escrito y ser ratificado ante ministro de fe — consultar artículo específico en la versión vigente".
-• Los plazos de aviso previo (30 días) son de conocimiento general pero NO los atribuyas a un artículo específico sin RAG.
+• NO cites números de artículo (177, 162, 88, etc.) a menos que ese artículo aparezca textualmente en la documentación de referencia entregada.
+• Si no tienes el artículo en la documentación: escribe "según el Código del Trabajo, el finiquito debe constar por escrito y ser ratificado ante ministro de fe — consultar artículo específico en la versión vigente".
+• Los plazos de aviso previo (30 días) son de conocimiento general pero NO los atribuyas a un artículo específico sin respaldo documental.
 
 Si el caso no corresponde a tu rol → indica el estamento correcto y no continúes.
 
