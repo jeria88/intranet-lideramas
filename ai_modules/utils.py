@@ -462,25 +462,49 @@ def get_relevant_chunks(assistant, query, top_n=10):
     query_lower = query.lower()
     account_keywords = ["codigo", "cuenta", "item", "clase", "sep", "pie", "801", "802", "803", "804"]
     is_account_query = any(k in query_lower for k in account_keywords)
-    
+
+    convivencia_keywords = ["rice", "riohs", "convivencia", "falta", "sanción", "sancion", "conducta",
+                            "disciplina", "amonestación", "amonestacion", "suspension", "suspensión",
+                            "acoso", "bullying", "ridiculiz", "reglamento interno", "protocolo"]
+    is_convivencia_query = any(k in query_lower for k in convivencia_keywords)
+
+    # Máscara RICE/RIOHS — boost contextual para consultas de convivencia
+    rice_riohs_mask = np.array(
+        ["RICE_2025_temuco" in str(d) or "RIOHS_2025_temuco" in str(d) for d in doc_names],
+        dtype=bool
+    )
+
     # Priorización agresiva para asegurar que la Ley y el Manual siempre estén arriba
-    similarities[priority_mask] *= 500.0  # Incrementado de 100 a 500
+    similarities[priority_mask] *= 500.0
     if is_account_query:
-        similarities[priority_mask] *= 10.0 # Incrementado de 5 a 10
+        similarities[priority_mask] *= 10.0
+
+    # Boost RICE/RIOHS solo cuando la consulta es de convivencia o disciplina
+    if is_convivencia_query:
+        similarities[rice_riohs_mask] *= 300.0
 
     # 6. Selección por "Cubos" (Garantiza presencia de normativa oficial)
     # Cubo A: Fragmentos de Ley/Manual (Prioridad Legal)
     sacred_idxs = np.where(priority_mask)[0]
     sacred_top_n = min(len(sacred_idxs), 7)
     sacred_top = sacred_idxs[np.argsort(similarities[sacred_idxs])[::-1][:sacred_top_n]]
-    
+
+    # Cubo A2: RICE/RIOHS en consultas de convivencia (garantiza al menos 3 chunks)
+    if is_convivencia_query and rice_riohs_mask.any():
+        rice_idxs = np.where(rice_riohs_mask)[0]
+        rice_top = rice_idxs[np.argsort(similarities[rice_idxs])[::-1][:3]]
+    else:
+        rice_top = np.array([], dtype=int)
+
     # Cubo B: Resto de documentos (Contexto Institucional)
-    other_idxs = np.where(~priority_mask)[0]
-    other_top_n = min(len(other_idxs), top_n - len(sacred_top))
+    combined_priority = priority_mask | (rice_riohs_mask if is_convivencia_query else np.zeros_like(priority_mask, dtype=bool))
+    other_idxs = np.where(~combined_priority)[0]
+    other_top_n = min(len(other_idxs), top_n - len(sacred_top) - len(rice_top))
     other_top = other_idxs[np.argsort(similarities[other_idxs])[::-1][:other_top_n]]
     
     # Combinar manteniendo el orden de relevancia
-    top_indices = np.concatenate([sacred_top, other_top])
+    top_indices = np.concatenate([sacred_top, rice_top, other_top])
+    top_indices = np.unique(top_indices)  # evitar duplicados si RICE ya estaba en sacred
     
     scored_results = []
     for idx in top_indices:
