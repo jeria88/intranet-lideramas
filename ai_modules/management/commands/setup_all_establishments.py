@@ -345,10 +345,10 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
-| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
-| Protocolo RICE | Si aplica RICE: ¿cuál protocolo debe aplicarse? Especifica N° |
-| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Protocolo RICE | Si aplica RICE: ¿cuál protocolo corresponde? Describe el tipo sin número, salvo que aparezca literalmente en la documentación recibida. |
+| Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -377,10 +377,10 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
-| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Protocolo RICE | ¿Cuál protocolo corresponde? Describe el tipo (maltrato, acoso, urgencia, etc.) sin número, salvo que el número aparezca literalmente en la documentación recibida. |
-| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
+| Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -423,10 +423,10 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
-| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
-| Protocolo RICE | Si aplica RICE: ¿cuál protocolo debe aplicarse? Especifica N° |
-| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Protocolo RICE | Si aplica RICE: ¿cuál protocolo corresponde? Describe el tipo sin número, salvo que aparezca literalmente en la documentación recibida. |
+| Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -471,9 +471,9 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | ¿Corresponde a tu rol? | Escribe SOLO: SÍ o NO |
 | Pertinencia del rol | Si NO: ¿a quién deriva y por qué? Si SÍ: confirma tu competencia en una frase |
 | Normativa vigente | Normativa que regula o sanciona el caso |
-| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
-| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
-| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe brevemente la obligación o infracción que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación o protocolo que corresponde, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
+| Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia que regula, sin número de artículo. Los artículos van solo en la sección A si puedes copiar su texto literalmente. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
@@ -512,9 +512,9 @@ PASO 1 — TABLA DE ANÁLISIS (primera y obligatoria):
 | Procedimiento según Manual de Cuentas | Cómo proceder según el Manual de Cuentas vigente |
 | Normativa laboral | Normativa laboral que regula el caso |
 | Normativa educativa | Normativa educativa que regula o sanciona el caso |
-| Artículos RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe la obligación que regula, sin número de artículo. |
-| Artículos RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación que corresponde, sin número de artículo. |
-| Artículos Regl. Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
+| RIOHS | ¿Aplica el RIOHS? SÍ/NO. Si SÍ: describe la obligación que regula, sin número de artículo. |
+| RICE | ¿Aplica el RICE? SÍ/NO. Si SÍ: describe brevemente la tipificación que corresponde, sin número de artículo. |
+| Reglamento de Evaluación | ¿Aplica el Reglamento de Evaluación? SÍ/NO. Si SÍ: describe la materia, sin número de artículo. |
 | Abordaje desde el PEI | Cómo abordar el caso desde el Proyecto Educativo Institucional |
 """ + _PASOS + _SUFIJO_COMUN
 
