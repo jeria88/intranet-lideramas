@@ -21,6 +21,7 @@ from django.core.management.base import BaseCommand
 from ai_modules.models import AIAssistant
 from ai_modules.services import call_deepseek_ai
 from ai_modules.v2.services import call_ai_v2
+from ai_modules.v3.services import call_ai_v3
 from ai_modules.utils import get_relevant_chunks
 
 
@@ -341,11 +342,19 @@ SLUGS_TEMUCO_V2 = [
     "representante-temuco-v2",
 ]
 
+SLUGS_TEMUCO_V3 = [
+    "utp-temuco-v3",
+    "inspector-temuco-v3",
+    "convivencia-temuco-v3",
+    "director-temuco-v3",
+    "representante-temuco-v3",
+]
+
 # Mapa de slugs de cruce por establecimiento.
-# Añadir nueva entrada cuando se incorpore otro establecimiento.
 SLUGS_CRUCE_POR_EST = {
-    "temuco": SLUGS_TEMUCO,
+    "temuco":    SLUGS_TEMUCO,
     "temuco-v2": SLUGS_TEMUCO_V2,
+    "temuco-v3": SLUGS_TEMUCO_V3,
 }
 
 CASOS_CRUCE = [
@@ -598,9 +607,14 @@ class Command(BaseCommand):
         parser.add_argument('--sin-juez', action='store_true')
         parser.add_argument('--v2', action='store_true',
                             help='Testea contra asistentes v2 (slugs con sufijo -v2)')
+        parser.add_argument('--v3', action='store_true',
+                            help='Testea contra asistentes v3 (slugs con sufijo -v3)')
 
     def handle(self, *args, **options):
         use_v2 = options.get('v2', False)
+        use_v3 = options.get('v3', False)
+        if use_v3:
+            use_v2 = False  # v3 tiene prioridad
 
         casos = TODOS_LOS_CASOS
         if options['caso']:
@@ -610,21 +624,23 @@ class Command(BaseCommand):
         if options['suite']:
             casos = [c for c in casos if c['suite'] == options['suite']]
 
-        # Para v2: reemplazar slugs hardcodeados con variantes -v2
-        if use_v2:
-            def _v2slug(s): return s + '-v2' if s and not s.endswith('-v2') else s
+        # Reemplazar slugs según versión seleccionada
+        suffix = '-v3' if use_v3 else ('-v2' if use_v2 else None)
+        if suffix:
+            def _versioned(s): return s + suffix if s and not s.endswith(suffix) else s
             nuevos = []
             for c in casos:
                 c = dict(c)
                 if 'slug' in c:
-                    c['slug'] = _v2slug(c['slug'])
+                    c['slug'] = _versioned(c['slug'])
                 if 'slug_propietario' in c:
-                    c['slug_propietario'] = _v2slug(c['slug_propietario'])
+                    c['slug_propietario'] = _versioned(c['slug_propietario'])
                 if 'esperado_por_slug' in c:
-                    c['esperado_por_slug'] = {_v2slug(k): v for k, v in c['esperado_por_slug'].items()}
+                    c['esperado_por_slug'] = {_versioned(k): v for k, v in c['esperado_por_slug'].items()}
                 nuevos.append(c)
             casos = nuevos
-            self.stdout.write(self.style.WARNING("Modo --v2: testeando asistentes con sufijo -v2\n"))
+            label = '--v3' if use_v3 else '--v2'
+            self.stdout.write(self.style.WARNING(f"Modo {label}: testeando asistentes con sufijo {suffix}\n"))
 
         # Filtro por establecimiento: aplica a slug (casos regulares)
         # y a slug_propietario (casos cruce)
@@ -635,14 +651,18 @@ class Command(BaseCommand):
                 if est in c.get('slug', '') or est in c.get('slug_propietario', '')
             ]
             # Para cruce, restringir también los slugs de los evaluados
-            lookup_est = est + '-v2' if use_v2 else est
+            lookup_est = est + suffix if suffix else est
             slugs_est = SLUGS_CRUCE_POR_EST.get(lookup_est) or SLUGS_CRUCE_POR_EST.get(est)
             if not slugs_est:
-                # Fallback: derivar slugs desde los casos cruce filtrados
-                base = SLUGS_TEMUCO_V2 if use_v2 else SLUGS_TEMUCO
+                base = SLUGS_TEMUCO_V3 if use_v3 else (SLUGS_TEMUCO_V2 if use_v2 else SLUGS_TEMUCO)
                 slugs_est = [s for s in base if est in s]
         else:
-            slugs_est = SLUGS_TEMUCO_V2 if use_v2 else None  # v2 usa sus slugs; normal usa SLUGS_TEMUCO
+            if use_v3:
+                slugs_est = SLUGS_TEMUCO_V3
+            elif use_v2:
+                slugs_est = SLUGS_TEMUCO_V2
+            else:
+                slugs_est = None
 
         if not casos:
             self.stdout.write(self.style.ERROR('Sin casos con esos filtros.')); return
@@ -660,7 +680,7 @@ class Command(BaseCommand):
         casos_cruce = [c for c in casos if c['suite'] == 'cruce']
 
         for caso in casos_cruce:
-            self._eval_cruce(caso, lineas, resumen, options, slugs_est=slugs_est, use_v2=use_v2)
+            self._eval_cruce(caso, lineas, resumen, options, slugs_est=slugs_est, use_v2=use_v2, use_v3=use_v3)
 
         for caso in casos_regulares:
             self.stdout.write(f"\n▶ {caso['id']} — {caso['titulo']}")
@@ -682,7 +702,9 @@ class Command(BaseCommand):
             # Llamar al asistente
             messages = [{"role": "user", "content": caso['query']}]
             try:
-                if use_v2:
+                if use_v3:
+                    respuesta = call_ai_v3(assistant, messages, caso['query'])
+                elif use_v2:
                     respuesta = call_ai_v2(assistant, messages, caso['query'])
                 else:
                     respuesta = call_deepseek_ai(assistant, messages, caso['query'])
@@ -781,9 +803,16 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"\n✅ Reporte: {output_path}"))
 
-    def _eval_cruce(self, caso, lineas, resumen, options, slugs_est=None, use_v2=False):
+    def _eval_cruce(self, caso, lineas, resumen, options, slugs_est=None, use_v2=False, use_v3=False):
         """Evalúa un caso cruce contra los asistentes del establecimiento."""
-        slugs = slugs_est if slugs_est is not None else (SLUGS_TEMUCO_V2 if use_v2 else SLUGS_TEMUCO)
+        if slugs_est is not None:
+            slugs = slugs_est
+        elif use_v3:
+            slugs = SLUGS_TEMUCO_V3
+        elif use_v2:
+            slugs = SLUGS_TEMUCO_V2
+        else:
+            slugs = SLUGS_TEMUCO
         self.stdout.write(f"\n▶ {caso['id']} — {caso['titulo']}")
         self.stdout.write(f"  Suite: cruce | {caso['id']} | evaluando {len(slugs)} roles...")
 
@@ -804,7 +833,9 @@ class Command(BaseCommand):
 
             messages = [{"role": "user", "content": caso['query']}]
             try:
-                if use_v2:
+                if use_v3:
+                    resp = call_ai_v3(assistant, messages, caso['query'])
+                elif use_v2:
                     resp = call_ai_v2(assistant, messages, caso['query'])
                 else:
                     resp = call_deepseek_ai(assistant, messages, caso['query'])

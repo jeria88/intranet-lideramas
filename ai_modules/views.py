@@ -7,6 +7,7 @@ from notifications.models import Notification
 from .forms import AIQueryForm
 from .services import call_deepseek_ai
 from .v2.services import call_ai_v2
+from .v3.services import call_ai_v3
 from .utils import extract_text_from_file
 from django.http import JsonResponse
 import re
@@ -634,7 +635,9 @@ def conversation_detail(request, slug, conv_id):
         for f in request.FILES.getlist('attachment'):
             attached_text += extract_text_from_file(f) + "\n\n"
 
-        if assistant.slug.endswith('-v2'):
+        if assistant.slug.endswith('-v3'):
+            ai_response = call_ai_v3(assistant, history, user_message, attached_content=attached_text)
+        elif assistant.slug.endswith('-v2'):
             ai_response = call_ai_v2(assistant, history, user_message, attached_content=attached_text)
         else:
             ai_response = call_deepseek_ai(assistant, history, user_message, attached_content=attached_text)
