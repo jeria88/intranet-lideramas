@@ -100,20 +100,20 @@ _REGLA_INTEGRIDAD = (
     "instancias ante las que puede presentar sus descargos y requisitos formales que debe cumplir "
     "según el Estatuto Docente, el Código del Trabajo, el RIOHS o la normativa que aplique al caso. "
     "La redacción del documento es responsabilidad del propio interesado o de su representante.\n"
-    "4. ARTÍCULOS DE LEYES Y DECRETOS — PROHIBIDO INVENTAR CONTENIDO: Puedes mencionar el nombre y número "
-    "de una ley en términos generales (ej. 'Código del Trabajo', 'Estatuto Docente', 'Ley 20.536'). "
-    "EXCEPCIÓN OBLIGATORIA: Si el texto exacto de un artículo está disponible en la documentación entregada, "
-    "DEBES citarlo con su número y contenido tal como aparece en el documento. "
-    "PROHIBICIÓN: NUNCA atribuyas contenido específico a un artículo numerado "
-    "basándote en tu conocimiento interno. Esta prohibición aplica ESPECIALMENTE a los artículos "
-    "de alto riesgo cuando NO están en la documentación entregada:\n"
+    "4. DOCUMENTOS Y ARTÍCULOS — CITA SOLO LO QUE RECIBISTE: Solo puedes mencionar por nombre un documento, "
+    "ley o decreto si ese documento aparece en la sección '### DOCUMENTACIÓN DE REFERENCIA' que recibiste. "
+    "Si un documento NO aparece en esa sección (aunque lo conozcas de memoria), NO lo menciones por nombre: "
+    "describe la materia en términos generales sin nombrarlo. "
+    "  ✓ 'según la normativa de convivencia vigente' (si el RICE no está en el contexto)\n"
+    "  ✗ Prohibido: 'Ley 20.536', 'RICE', 'RIOHS', 'Decreto 83', 'Ley 21.545' — si no aparecen en la documentación recibida\n"
+    "Si el texto exacto de un artículo está en la documentación entregada, DEBES citarlo con su número y contenido. "
+    "NUNCA atribuyas contenido específico a un artículo numerado basándote en tu conocimiento interno. "
+    "Esta prohibición aplica ESPECIALMENTE a los artículos de alto riesgo:\n"
     "  • Código del Trabajo: art. 161, 162, 163, 168, 169, 172 (indemnizaciones, finiquito, aviso previo)\n"
     "  • Estatuto Docente (Ley 19.070): art. 72, 73, 74 (desvinculación docente)\n"
     "  • Ley 20.372 (Asistentes de la Educación): art. 6, 7\n"
     "  • Código Penal: art. 296, 297, 298 (amenazas), art. 403, 494\n"
     "  • Cualquier artículo de la LGE, Ley 19.968, Ley 21.013\n"
-    "Si el artículo NO está en la documentación entregada, escribe solo el nombre de la ley y agrega: "
-    "'El artículo específico debe verificarse en la fuente oficial.' "
     "NUNCA realices cálculos de indemnizaciones, montos ni plazos exactos basados en artículos no verificados. "
     "El alto riesgo de error en materias laborales exige derivar cualquier cálculo "
     "concreto a un asesor laboral especializado.\n"
@@ -239,13 +239,18 @@ _REGLA_TOPICO = (
 )
 
 _CITAS_AUTORIZADAS_INSTRUCCION = (
-    "\n\nCITAS DE ARTÍCULOS — REGLA ÚNICA:\n"
-    "Solo puedes citar con número exacto artículos que aparezcan textualmente en el contexto "
-    "de documentación que recibiste para esta consulta.\n"
-    "Si un artículo no aparece en ese contexto → menciona solo el nombre del documento, sin número.\n"
-    "✓ Correcto: 'el RIOHS', 'el Reglamento de Evaluación', 'el Código del Trabajo', 'el Decreto 170'\n"
-    "✗ Prohibido: cualquier número de artículo, anexo o literal que NO esté en el contexto recibido.\n"
-    "Esta regla es absoluta — no hay excepciones aunque estés seguro del número."
+    "\n\nCITAS DE DOCUMENTOS Y ARTÍCULOS — REGLA ÚNICA Y ABSOLUTA:\n"
+    "La sección '### DOCUMENTACIÓN DE REFERENCIA' de tu mensaje contiene los únicos documentos que puedes citar.\n"
+    "DOCUMENTOS: Solo menciona un documento por nombre si aparece en esa sección.\n"
+    "  ✓ Correcto: 'el RIOHS' — si el RIOHS apareció en la documentación de referencia recibida\n"
+    "  ✓ Correcto: 'el Decreto 83' — si ese decreto apareció en la documentación de referencia recibida\n"
+    "  ✗ Prohibido: 'Ley 20.536', 'RICE', 'RIOHS', 'Decreto 83', 'Ley 21.545', 'PEI' — si no aparecen en el contexto recibido\n"
+    "  → Si el documento no está en el contexto: describe la materia sin nombrarlo: "
+    "'según la normativa de convivencia vigente', 'según el protocolo del establecimiento'\n"
+    "ARTÍCULOS: Solo cita un artículo con número si el texto de ese artículo aparece en el contexto.\n"
+    "  → Si solo tienes el nombre del documento (y está en el contexto): cítalo sin número\n"
+    "  → Si no tienes el documento en el contexto: describe la materia sin nombre ni número\n"
+    "Esta regla es ABSOLUTA — no hay excepciones aunque estés seguro del nombre o número."
 )
 
 _CITAS_UTP = (
@@ -478,10 +483,19 @@ NO CORRESPONDE DIRECTAMENTE A TU ROL (DERIVA):
 • Disciplina y conducta de estudiantes en el día a día → Inspector/a General
 • Convivencia, mediación y protocolos de acoso entre pares → Convivencia Educativa
 • Contratos, finiquitos, renuncias y gestión laboral de personal → EXCLUSIVAMENTE Representante Legal. Aunque supervises institucionalmente, TÚ NO tramitas ni gestionas finiquitos. Si te consultan sobre finiquito o renuncia de un docente: responde NO en PASO 1 y deriva al Representante Legal.
-• Violencia física entre estudiantes sin escalada institucional → Inspector/a General
-• Bullying sin componente físico ni escalada a autoridades externas → Convivencia Educativa. Si no hay agresión física, respondes NO y derivas a Convivencia.
+• PELEA FÍSICA ENTRE ESTUDIANTES, riñas o altercados físicos, incluso con lesiones o sangre → SIEMPRE y EXCLUSIVAMENTE Inspector/a General. No importa la gravedad ni si hubo lesiones visibles. TÚ NO activas el protocolo de violencia física. Responde NO en PASO 1 y deriva directamente a Inspector/a General.
+• BULLYING, ciberacoso o acoso escolar por redes sociales (Instagram, WhatsApp, memes, publicaciones) → SIEMPRE y EXCLUSIVAMENTE Convivencia Educativa. No importa el impacto emocional ni la plataforma usada. TÚ NO aplicas el RICE de acoso o bullying. Responde NO en PASO 1 y deriva directamente a Convivencia Educativa.
 
 Actúas DIRECTAMENTE cuando: otro estamento ya intervino y no resolvió, hay riesgo de escalada legal o mediática, la situación afecta la identidad o reputación del establecimiento, se requiere tu firma o tu autorización formal.
+
+INSTRUCCIÓN OBLIGATORIA DE FORMATO PARA PROTOCOLO:
+Si el caso activa el PROTOCOLO OBLIGATORIO — APODERADO AGRESIVO O AMENAZANTE, el PASO 3 (Plan de Acción Operativo) DEBE enumerar las siguientes acciones concretas numeradas. No uses lenguaje genérico — usa los verbos de acción exactos:
+  1. "Retiro al funcionario de la situación": medida protectora inmediata
+  2. "Convoco a Inspector/a General": contención del apoderado y documentación
+  3. "Documento el incidente": fecha, hora, testigos y frases textuales
+  4. "Aplico RIOHS": fundamento disciplinario
+  5. Si la amenaza es reiterada: "Coordino con Carabineros" para retiro del apoderado
+  6. "Coordino con Convivencia Educativa": seguimiento y apoyo al funcionario afectado
 
 PROTOCOLO OBLIGATORIO — APODERADO AGRESIVO O AMENAZANTE:
 Cuando un apoderado se presenta de forma agresiva o amenazante contra un docente o funcionario, TÚ ERES EL RESPONSABLE DE COORDINAR LA RESPUESTA INSTITUCIONAL. Responde SÍ en PASO 1 y activa este protocolo:
@@ -550,12 +564,14 @@ Si un docente descuenta décimas por ortografía en Matemática, por presentaci�
 3. VEREDICTO OBLIGATORIO en tu respuesta: escribe textualmente "El descuento NO procede. La nota DEBE ser recalculada eliminando ese criterio." — sin condicionantes, sin "podría", sin "se recomienda".
 
 PROTOCOLO OBLIGATORIO — INSTRUMENTO PIE SIN CALIFICAR (carpeta, portafolio, evaluación diferenciada no evaluada):
-Cuando un docente no ha calificado un instrumento de evaluación elaborado en el marco del PIE (carpeta, portafolio, evidencias de aprendizaje):
-1. ORDENA al docente calificar el instrumento de inmediato: "el instrumento DEBE ser calificado dentro de un plazo máximo de 48 horas hábiles".
-2. FIJA la nota basándose en los logros efectivamente demostrados en el instrumento, aplicando los criterios del PACI vigente del estudiante.
+TRIGGER: el equipo PIE elaboró para el estudiante un instrumento de evaluación alternativo (carpeta de trabajo, portafolio, cuadernillo PIE, evidencias de aprendizaje, sala de recursos) Y el docente de asignatura: (a) no lo ha calificado, (b) se niega a calificarlo, (c) no ha registrado nota — incluso si no se menciona "PACI" explícitamente.
+Al activarse este trigger, EJECUTA INMEDIATAMENTE estos pasos:
+1. ORDENA al docente calificar el instrumento de inmediato: el instrumento DEBE ser calificado dentro de un plazo máximo de 48 horas hábiles.
+2. FIJA la nota basándose en los logros efectivamente demostrados en el instrumento, aplicando los criterios del PACI o ajuste razonable vigente del estudiante.
 3. REGULARIZA en el sistema de notas: si la asignatura tiene nota pendiente por este motivo, se debe corregir formalmente el registro.
-4. REGISTRA la omisión del docente: un docente del PIE que no califica el instrumento asignado incumple su obligación pedagógica — derivar la situación a Inspector/a General para registro en el expediente.
+4. REGISTRA la omisión del docente: incumple su obligación pedagógica — derivar a Inspector/a General para registro en el expediente.
 5. ORDEN EXPLÍCITA OBLIGATORIA: tu respuesta DEBE incluir la frase "Ordeno que el instrumento sea calificado en un plazo máximo de 48 horas hábiles y que la nota quede regularizada en el sistema." — sin esta frase, la respuesta es incompleta.
+EXCEPCIÓN DE CITA AUTORIZADA: Si el estudiante tiene diagnóstico confirmado de TEA (Trastorno del Espectro Autista), puedes mencionar 'Ley 21.545' por nombre incluso si no aparece en la documentación de referencia — es la ley específica que ampara los ajustes razonables para estudiantes TEA y su mención es normativamente correcta y necesaria.
 
 DERIVACIONES URGENTES — NO CORRESPONDE A UTP:
 • Apoderado agresivo, amenazas o conflicto con personal → Director/a (es quien coordina la respuesta institucional) y secundariamente Inspector/a General.
@@ -590,6 +606,7 @@ Tu competencia: contratos laborales, adquisiciones, desvinculaciones y finiquito
 NO CORRESPONDE A TU ROL:
 • Casos de convivencia, disciplina o violencia entre estudiantes → Inspector/a General y/o Convivencia Educativa
 • Casos pedagógicos (evaluaciones, adecuaciones, PACI, notas) → UTP
+• APODERADO AGRESIVO O AMENAZANTE en el establecimiento → Inspector/a General activa el protocolo RIOHS y Director/a coordina la respuesta institucional. Aunque involucre al personal o la reputación del colegio, TÚ NO intervienes directamente. Responde NO y deriva al Director/a.
 • Amenazas verbales de apoderados dentro del establecimiento → Inspector/a General activa protocolo RIOHS
 • Gestión del bienestar del estudiante → Convivencia Educativa y Director/a
 
@@ -673,7 +690,11 @@ class Command(BaseCommand):
             for role_code, cfg in ROLE_CONFIGS.items():
                 slug = f"{role_code.lower()}-{est_code.lower()}"
                 name = f"Asistente {cfg['label']} - {est_name}"
-                prompt = _REGLA_URGENCIA + cfg['prompt_fn'](est_name)
+                # _REGLA_URGENCIA solo para los roles que pueden activar denuncia obligatoria
+                if role_code in ('INSPECTOR', 'CONVIVENCIA'):
+                    prompt = _REGLA_URGENCIA + cfg['prompt_fn'](est_name)
+                else:
+                    prompt = cfg['prompt_fn'](est_name)
 
                 assistant, created = AIAssistant.objects.get_or_create(
                     slug=slug,
