@@ -21,17 +21,22 @@ USER_PASSWORD = '123456'
 
 
 class Command(BaseCommand):
-    help = 'Crea/activa todos los usuarios de la Red LiderA+. Seguro para correr en cada deploy.'
+    help = 'Crea/activa todos los usuarios de un proyecto LiderA+. Seguro para correr en cada deploy.'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--tenant', default='sfa',
+            help='Slug del proyecto (default: sfa)',
+        )
 
     def handle(self, *args, **options):
-        # Envuelto en try/except global para que NUNCA falle el startCommand de Railway
+        self.tenant = options['tenant']
         try:
             self._run()
         except Exception:
             self.stderr.write('=== ERROR CRÍTICO en activate_all_users ===')
             self.stderr.write(traceback.format_exc())
             self.stderr.write('El deploy continúa, pero los usuarios pueden no haberse creado.')
-            # No relanzamos la excepción → exit code 0 → el deploy no se detiene
 
     def _run(self):
         # Detectar si la columna must_change_password ya existe en el esquema real
@@ -40,7 +45,7 @@ class Command(BaseCommand):
             cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='users_user' AND column_name='must_change_password'")
             has_mcp = cursor.fetchone() is not None
 
-        self.stdout.write(f'=== activate_all_users | must_change_password en DB: {has_mcp} ===')
+        self.stdout.write(f'=== activate_all_users | tenant: {self.tenant} | must_change_password en DB: {has_mcp} ===')
 
         all_combos = [(role, ee) for ee in ESTABLISHMENTS for role in ROLES]
         all_combos.append(('RED', 'RED'))
@@ -67,14 +72,15 @@ class Command(BaseCommand):
             role, ee = 'RED', 'RED'
 
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(username=username, tenant=self.tenant)
             created = False
         except User.DoesNotExist:
             user = User(
                 username=username,
+                tenant=self.tenant,
                 role=role,
                 establishment=ee,
-                email=f'{username}@intranet-sfa.cl',
+                email=f'{username}@{self.tenant}.lideramas.cl',
                 is_active=True,
                 first_name='',
                 last_name='',

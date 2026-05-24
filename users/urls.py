@@ -1,15 +1,12 @@
 from django.urls import path
-from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
 from . import views
-from .forms import DemoAuthenticationForm
 
 app_name = 'users'
 
 urlpatterns = [
-    path('login/', auth_views.LoginView.as_view(
-        template_name='users/login.html',
-        authentication_form=DemoAuthenticationForm
-    ), name='login'),
+    # Ruta legacy → redirige a la página de acceso
+    path('login/', RedirectView.as_view(url='/acceso/', permanent=False), name='login'),
     path('logout/', views.custom_logout, name='logout'),
     path('profile/', views.profile, name='profile'),
     path('cambiar-contrasena/', views.change_password, name='change_password'),

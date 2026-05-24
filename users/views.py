@@ -1,8 +1,42 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout as django_logout, update_session_auth_hash
+from django.contrib.auth import (
+    logout as django_logout,
+    authenticate,
+    login as auth_login,
+    update_session_auth_hash,
+)
 from django.contrib import messages
 from .forms import UserProfileForm
+
+
+def tenant_login(request, tenant):
+    if request.user.is_authenticated:
+        return redirect('portal:index')
+
+    error = None
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        user = authenticate(request, username=username, password=password, tenant=tenant)
+        if user is not None:
+            auth_login(request, user)
+            request.session['tenant'] = tenant
+            next_url = request.POST.get('next') or request.GET.get('next') or '/'
+            return redirect(next_url)
+        error = 'Usuario o contraseña incorrectos. Intente nuevamente.'
+
+    return render(request, 'users/login.html', {'tenant': tenant, 'error': error})
+
+
+def tenant_logout(request, tenant):
+    if request.user.is_authenticated:
+        django_logout(request)
+    return render(request, 'users/logout_success.html', {'tenant': tenant})
+
+
+def acceso(request):
+    return render(request, 'users/acceso.html')
 
 
 @login_required
@@ -15,6 +49,7 @@ def profile(request):
     else:
         form = UserProfileForm(instance=request.user)
     return render(request, 'users/profile.html', {'form': form})
+
 
 @login_required
 def change_password(request):
@@ -39,6 +74,9 @@ def change_password(request):
 
 
 def custom_logout(request):
+    tenant = request.session.get('tenant', '') if request.user.is_authenticated else ''
     if request.user.is_authenticated:
         django_logout(request)
-    return render(request, 'users/logout_success.html')
+    if tenant:
+        return redirect(f'/{tenant}/login/')
+    return redirect('acceso')

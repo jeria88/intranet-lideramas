@@ -7,9 +7,15 @@
     <p style="color: var(--contrast-2); font-size: 16px; line-height: 1.6; margin-bottom: 32px;">
         Haz cerrado sesión correctamente. Gracias por usar LiderA+.
     </p>
-    <a href="{% url 'users:login' %}" style="display: inline-block; background: var(--accent); color: white; text-decoration: none; padding: 14px 35px; border-radius: 30px; font-weight: 600; transition: transform 0.2s, background 0.2s;">
+    {% if tenant %}
+    <a href="/{{ tenant }}/login/" style="display: inline-block; background: var(--accent); color: white; text-decoration: none; padding: 14px 35px; border-radius: 30px; font-weight: 600; transition: transform 0.2s, background 0.2s;">
         Volver a Iniciar Sesión
     </a>
+    {% else %}
+    <a href="/acceso/" style="display: inline-block; background: var(--accent); color: white; text-decoration: none; padding: 14px 35px; border-radius: 30px; font-weight: 600; transition: transform 0.2s, background 0.2s;">
+        Volver a Iniciar Sesión
+    </a>
+    {% endif %}
 </div>
 
 <style>

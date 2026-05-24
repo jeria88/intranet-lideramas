@@ -128,10 +128,8 @@
         <h2>LiderA+</h2>
         <p class="subtitle">Plataforma de Gestión Educacional</p>
 
-        {% if form.errors %}
-        <div class="error-msg">
-            Usuario o contraseña incorrectos. Intente nuevamente.
-        </div>
+        {% if error %}
+        <div class="error-msg">{{ error }}</div>
         {% endif %}
 
         <form method="post">
@@ -158,7 +156,7 @@
                🔑 RECUPERAR CONTRASEÑA
             </a>
         </div>
-        <p style="margin-top: 15px; font-size: 11px; color: var(--contrast-3);">O contacte a soporte@sfared.cl</p>
+        <p style="margin-top: 15px; font-size: 11px; color: var(--contrast-3);">O contacte a soporte@lideramas.cl</p>
     </div>
 </body>
 

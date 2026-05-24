@@ -340,10 +340,14 @@
                                 {{ user.username }}
                             </span>
                         </a>
+                        {% if request.tenant %}
+                        <a href="/{{ request.tenant }}/logout/" style="color: #dc3545; font-size: 13px; text-decoration: none; font-weight: 700; padding-right: 20px;">Salir</a>
+                        {% else %}
                         <a href="{% url 'users:logout' %}" style="color: #dc3545; font-size: 13px; text-decoration: none; font-weight: 700; padding-right: 20px;">Salir</a>
+                        {% endif %}
                     </li>
                     {% else %}
-                    <li style="margin-left: auto;"><a href="{% url 'users:login' %}"
+                    <li style="margin-left: auto;"><a href="/acceso/"
                             style="color: var(--accent);">Iniciar Sesión</a></li>
                     {% endif %}
                 </ul>

@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso | LiderA+</title>
+    <link rel="stylesheet" href="{% static 'css/main.min.css' %}">
+    <style>
+        :root {
+            --accent: #1e73be;
+            --contrast: #222222;
+            --contrast-2: #575760;
+            --contrast-3: #b2b2be;
+            --base-2: #f7f8f9;
+            --base-3: #ffffff;
+        }
+        body {
+            background: var(--base-2);
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: var(--base-3);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            padding: 52px 44px;
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+        }
+        .card img {
+            height: 60px;
+            width: auto;
+            margin-bottom: 24px;
+            mix-blend-mode: multiply;
+        }
+        .card h2 {
+            margin: 0 0 12px;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--contrast);
+        }
+        .card p {
+            color: var(--contrast-2);
+            font-size: 15px;
+            line-height: 1.6;
+            margin: 0 0 28px;
+        }
+        .url-example {
+            background: #f1f5f9;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-family: monospace;
+            font-size: 14px;
+            color: var(--accent);
+            margin: 0 0 28px;
+            word-break: break-all;
+        }
+        .note {
+            font-size: 12px;
+            color: var(--contrast-3);
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="{% static 'img/logo-lideramas.jpeg' %}" alt="Logo LiderA+">
+        <h2>Acceso a LiderA+</h2>
+        <p>Para ingresar usa el enlace personalizado de tu organización:</p>
+        <div class="url-example">intranet.lideramas.cl/<strong>{tu-proyecto}</strong>/login</div>
+        <p>Si no tienes tu enlace, contacta al administrador de tu institución.</p>
+        <p class="note">¿Eres administrador? Escribe a soporte@lideramas.cl</p>
+    </div>
+</body>
+</html>

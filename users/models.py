@@ -1,9 +1,18 @@
 from django.db import models
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 
 
 class User(AbstractUser):
+    # Override to remove global unique — uniqueness is enforced per (username, tenant)
+    username = models.CharField(
+        max_length=150,
+        validators=[UnicodeUsernameValidator()],
+        verbose_name='username',
+        error_messages={'unique': 'Ya existe un usuario con ese nombre en este proyecto.'},
+    )
+    tenant = models.CharField(max_length=50, default='sfa', verbose_name='Proyecto')
+
     ROLE_CHOICES = [
         ('REPRESENTANTE', 'Representante Legal'),
         ('UTP', 'Unidad Técnica Pedagógica'),
@@ -40,6 +49,13 @@ class User(AbstractUser):
     def can_approve_circulars(self):
         """Director, UTP, Representante y Staff pueden aprobar circulares."""
         return self.role in ['REPRESENTANTE', 'DIRECTOR', 'UTP'] or self.is_staff
+
+    class Meta:
+        unique_together = [('username', 'tenant')]
+
+    @property
+    def short_username(self):
+        return self.username
 
     def __str__(self):
         return f"{self.get_full_name() or self.username} — {self.get_role_display()} ({self.get_establishment_display()})"

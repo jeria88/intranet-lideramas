@@ -63,6 +63,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'users.middleware.TenantMiddleware',
     'users.middleware.ForcePasswordChangeMiddleware',
     'encuesta.middleware.EncuestaObligatoriaMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -181,10 +182,14 @@ else:
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
+AUTHENTICATION_BACKENDS = [
+    'users.backends.TenantAuthBackend',
+]
+
 # ── Auth URLs ─────────────────────────────────────────────────────────────
-LOGIN_URL = '/usuarios/login/'
+LOGIN_URL = '/acceso/'
 LOGIN_REDIRECT_URL = 'portal:index'
-LOGOUT_REDIRECT_URL = 'users:login'
+LOGOUT_REDIRECT_URL = 'acceso'
 
 # ── Registro de Logs ───────────────────────────────────────────────────────
 LOGGING = {
