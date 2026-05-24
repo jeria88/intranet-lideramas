@@ -1,9 +1,10 @@
-import os
 import traceback
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+ARCHIVED_PASSWORD = 'Y^NT5oAwhwIhrn0U^D7U'
 
 
 class Command(BaseCommand):
@@ -17,11 +18,7 @@ class Command(BaseCommand):
             self.stderr.write(traceback.format_exc())
 
     def _run(self):
-        password = os.environ.get('SFA_ARCHIVED_PASSWORD', '')
-        if not password:
-            self.stderr.write('SFA_ARCHIVED_PASSWORD no definida en el entorno — abortando.')
-            return
-
+        password = ARCHIVED_PASSWORD
         qs = User.objects.filter(tenant='sfa', is_superuser=False, is_staff=False)
         total = qs.count()
         updated = 0
