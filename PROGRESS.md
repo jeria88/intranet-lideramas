@@ -1,26 +1,61 @@
 # PROGRESS.md — Guía de continuación para cualquier IA
 
-> **Actualizado:** 2026-05-18 · Últimos commits: `d16a03b` (RICE + RIOHS 2025 Temuco indexados, fix ingest FK)
+> **Actualizado:** 2026-05-24 · Últimos commits: `3c28a99` (archive SFA users) · `1b6839e` (multi-tenancy) · `c7ca386` (rebranding LiderA+)
 > Leer esto ANTES de hacer cualquier cambio al código.
 
 ---
 
 ## 🏗️ Arquitectura General
 
-Intranet escolar chilena (Red SFA — 8 establecimientos) desplegada en **Railway** + **GitHub Actions**.
+**LiderA+** — Plataforma multi-tenant de gestión educacional desplegada en **Railway** + **GitHub Actions**.
 - Stack: **Django / Python 3.12 / PostgreSQL (Railway) / Cloudflare R2 / Daily.co / OpenAI / DeepSeek**
 - Restricción crítica: servidor <4 GB RAM → sin numpy, sin pgvector; embeddings como JSONField
-- Roles de usuario: `DIRECTOR`, `UTP`, `INSPECTOR`, `CONVIVENCIA`, `REPRESENTANTE`, `RED`
-- Establecimientos: `TEMUCO`, `ANGOL`, `ARAUCO`, `IMPERIAL`, `LAUTARO`, `ERCILLA`, `SANTIAGO`, `RENAICO`
-- Deploy: push a `main` → Railway corre Procfile automáticamente (migrate + setup_all_establishments + collectstatic)
+- Dominio: `intranet.lideramas.cl`
+- Deploy: push a `main` → Railway corre Procfile automáticamente
+
+---
+
+## 🌐 Multi-tenancy (implementado 2026-05-24)
+
+Usuarios aislados por campo `tenant` en el modelo User.
+
+```python
+# User.tenant + unique_together(username, tenant)
+# Login: intranet.lideramas.cl/{tenant}/login/
+# Auth backend: users.backends.TenantAuthBackend
+# Middleware: users.middleware.TenantMiddleware → inyecta request.tenant desde sesión
+```
+
+**Tenants:**
+| Slug | Estado | Detalle |
+|------|--------|---------|
+| `sfa` | ⚠️ Archivado | Contrato pausado 2026-05-24. Usuarios desactivados, contraseña de archivo guardada en `.env`. Solo admin activo. |
+
+**Para crear nuevo tenant:**
+```bash
+python manage.py activate_all_users --tenant slug-proyecto
+```
+
+**Para archivar un tenant:**
+- Crear comando similar a `archive_sfa_users.py` con el slug correspondiente
+- Remover su `activate_all_users --tenant X` del Procfile
+
+---
+
+## ⚠️ Estado Tenant SFA — ARCHIVADO
+
+- `archive_sfa_users` corre en cada deploy: desactiva todos los no-superusers de tenant='sfa'
+- Contraseña de archivo en `.env` (variable `SFA_ARCHIVED_PASSWORD`)
+- Admin (`is_superuser=True`) permanece activo
+- Establecimientos del piloto: TEMUCO, LAUTARO, RENAICO, SANTIAGO, IMPERIAL, ERCILLA, ARAUCO, ANGOL
 
 ---
 
 ## ✅ MÓDULO COMPLETADO: Asistentes IA (`ai_modules/`)
 
 ### Estado actual
-- **41 asistentes** activos: 5 roles × 8 establecimientos + 1 RED
-- **Sistema de conversaciones** estilo ChatGPT: sidebar con historial + panel de chat unificado (`chat_app.html`)
+- **41 asistentes** por tenant SFA: 5 roles × 8 establecimientos + 1 RED
+- **Sistema de conversaciones** estilo ChatGPT: sidebar con historial + panel de chat unificado
 - **Prompts gestionados** por `setup_all_establishments.py` — fuente única de verdad, actualiza en cada deploy con `--update-prompts`
 
 ### Arquitectura de prompts (orden de inyección)
@@ -48,7 +83,6 @@ _DISCLAIMER
 | Inspector tomaba casos de UTP | `prompt_inspector` con sección NO COMPETENCIA explícita |
 | Artículos laborales inventados (CT, ED) | `_REGLA_INTEGRIDAD` item 4 con lista de artículos prohibidos |
 | Consultas off-topic (recetas, etc.) | `_REGLA_TOPICO` con mensaje de rechazo fijo |
-| Contaminación de historial | No ocurrió en test (sistema ok) |
 
 ### Modelos de conversación
 ```python
@@ -56,25 +90,6 @@ ChatConversation: user, assistant, title, created_at, updated_at, case(FK)
 ConversationMessage: conversation, role (user/assistant), content, timestamp
 PilotFeedback: user, origin (banner/respuesta_ia), message(FK nullable), feedback_text, created_at
 ```
-
-### Vistas de conversación
-| Vista | URL | Descripción |
-|-------|-----|-------------|
-| `conversation_list` | `/<slug>/conversaciones/` | Redirige a última conv o muestra empty state |
-| `conversation_new` | `/<slug>/conversaciones/nueva/` | Crea nueva conv y redirige |
-| `conversation_detail` | `/<slug>/conversaciones/<id>/` | GET: carga chat; POST: envía mensaje, retorna `response + message_id + new_title` |
-| `submit_pilot_feedback` | `/feedback/piloto/` | POST — guarda PilotFeedback |
-
-### Navegación
-- Botón "Volver" en chat → `portal:index` (dashboard)
-- URL `/<slug>/` redirige a `conversation_list` (vista detalle eliminada)
-- `ai_list` redirige a `conversation_list` del asistente
-
-### Sistema de feedback de pilotaje
-- **Banner amarillo** en cabecera del chat → modal feedback general (`origin='banner'`)
-- **👎 por burbuja IA** → modal con contexto pre-cargado + `origin='respuesta_ia'` + FK al mensaje
-- Input obligatorio en ambos; si vacío → borde rojo sin enviar
-- Al enviar: toast ✓, botón 👎 se convierte en ✓ deshabilitado
 
 ---
 
@@ -95,17 +110,10 @@ GitHub Actions (cron 15min) → descarga → chunks 10min + detección silencio
 
 ## ✅ MÓDULO COMPLETADO: SIMCE (`simce/`)
 
-Generador de pruebas con IA. Arquitectura nueva desde migración 0005.
+Generador de pruebas con IA. Arquitectura desde migración 0005.
 
 ### Modelos
 `TextoBiblioteca` · `PreguntaBanco` + `AlternativaBanco` · `PruebaTexto` (junction) · `SimceDocumento` + `SimceChunk` (RAG)
-
-### Flujo admin
-```
-Biblioteca → generar/crear textos → revisar/aprobar
-→ "Crear test desde biblioteca" → selecciona textos → configura preguntas por nivel
-→ lanzar generación IA → revisión final → aprobar → publicar
-```
 
 ### Dos modos para estudiantes
 - **Modo SIMCE**: formulario clásico, entrega al final
@@ -115,25 +123,29 @@ Biblioteca → generar/crear textos → revisar/aprobar
 
 ## 🎯 PRÓXIMOS PASOS
 
-- [ ] **Analizar feedbacks piloto** — revisar `PilotFeedback` en admin Django después de la semana de pilotaje
+### Pendiente técnico (cuando se reactive un tenant)
+- [ ] Analizar feedbacks piloto SFA — revisar `PilotFeedback` en admin Django
 - [ ] Indexar PDFs MINEDUC para RAG (`python manage.py index_simce_docs`)
 - [ ] Notificaciones push cuando procesamiento de reunión termine
-- [ ] Badges de estado en lista de grabaciones
 - [ ] Indexar PME faltante en Knowledge Base
-- [ ] Indexar resumen Código del Trabajo (UTP lo resumirá, luego ingestar con `--nivel nacional`)
-- [ ] Indexar RICE y RIOHS para los otros 7 establecimientos
+- [ ] Indexar RICE/RIOHS para los otros 7 establecimientos SFA
+
+### Pendiente producto (nuevo negocio Lideramas)
+- [ ] Definir modelo de negocio con Franco y su hermano
+- [ ] Onboardear primer tenant nuevo (configurar establecimientos, roles, prompts)
+- [ ] Considerar si ESTABLISHMENT_CHOICES debe volverse dinámico por tenant
+
+---
 
 ## ✅ Knowledge Base — Estado al 2026-05-18
 
-### Supabase — documentos activos (sin duplicados)
-- **Nacional** (~10.800 chunks): Código del Trabajo, Constitución, Estatuto Docente, Ley Inclusión, Ley Buen Trato, Ley TEA, Ley RNPA, Ley Asistentes Educación, Ley Transparencia, Ley Compras Públicas, Ley Protección Datos, Ley Aula Segura, Ley Convivencia Escolar, DFL-1, DFL-2, Decreto 67, MBDLE, IDPS, Plan Seguridad Escolar, Ley Indígena, entre otras
+### Supabase — documentos activos (tenant SFA)
+- **Nacional** (~10.800 chunks): CT, Constitución, Estatuto Docente, Ley Inclusión, Ley Buen Trato, Ley TEA, Ley RNPA, Ley Asistentes Educación, Ley Transparencia, Ley Compras Públicas, Ley Protección Datos, Ley Aula Segura, Ley Convivencia Escolar, DFL-1, DFL-2, Decreto 67, MBDLE, IDPS, Plan Seguridad Escolar, Ley Indígena, entre otras
 - **Congregacional**: Manual Cuentas 2026, Oficio CGR 60820, Normativa congregacional
 - **Institucional/Temuco**: RICE 2025 (36 chunks), RIOHS 2025 (72 chunks), Reglamento Interno 2025, Reglamento Evaluación, PEI, Política Convivencia MINEDUC, Ley 21430, Ley 20845, Derechos del Niño
-- **Rol/Director Temuco**: PEI (150 chunks), EID, MBE, MBDLE, Ley TEA, DFL-2 específico
 
-### Fix aplicado
+### Fix aplicado (ingest)
 - `ingest_md_to_knowledge.py`: busca assistant en `knowledge_base` DB (no en `default`) — evita FK violation entre Supabase y Railway
-- Para indexar nuevos docs: `python manage.py ingest_md_to_knowledge --file X.md --nivel nacional --assistant director-temuco`
 
 ---
 
@@ -141,12 +153,13 @@ Biblioteca → generar/crear textos → revisar/aprobar
 
 | Hash | Descripción |
 |------|-------------|
-| `cab9684` | fix(prompts): agrega _REGLA_TOPICO — rechaza consultas fuera del dominio escolar |
-| `187e73d` | feat(chat): sistema de feedback de pilotaje (banner + 👎 por respuesta) |
-| `2e8a93f` | feat(nav): volver desde chat va al dashboard, elimina vista detalle |
-| `22bcfc8` | fix(prompts): refuerza prohibición de artículos laborales y delimita rol Inspector |
-| `e2e45de` | feat(chat): interfaz ChatGPT — sidebar conversaciones + panel unificado |
-| `b94ad21` | feat(simce): CRUD completo TextoBiblioteca y PreguntaBanco |
+| `3c28a99` | Simplifica archive_sfa_users: contraseña fija, sin variable de entorno |
+| `fc86770` | Archiva tenant SFA: usuarios inhabilitados, contraseña en .env |
+| `1b6839e` | Multi-tenancy por path: /{tenant}/login/, /{tenant}/logout/ |
+| `e882ecb` | Ajuste logo LiderA+: tamaño proporcional y mix-blend-mode |
+| `c7ca386` | Rebranding completo SFA → LiderA+ (50 archivos) |
+| `a13820b` | restore: prompts de establecimientos a estado pre-v8 |
+| `82562c8` | feat: v3.1 — pipeline 2 etapas con RAG preprocesado + postprocesado |
 
 ---
 
@@ -160,6 +173,6 @@ Biblioteca → generar/crear textos → revisar/aprobar
 | `DEEPSEEK_API_KEY` | Motor IA (base_url: api.deepseek.com, modelo: deepseek-chat) |
 | `AWS_ACCESS_KEY_ID` | Cloudflare R2 |
 | `AWS_SECRET_ACCESS_KEY` | Cloudflare R2 |
-| `AWS_STORAGE_BUCKET_NAME` | `intranet-sfa-storage` |
+| `AWS_STORAGE_BUCKET_NAME` | Bucket R2 |
 | `AWS_S3_ENDPOINT_URL` | Endpoint R2 |
 | `INTERNAL_API_KEY` | Seguridad webhooks/API interna |
