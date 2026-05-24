@@ -1,5 +1,5 @@
 """
-Eval framework completo — Red SFA
+Eval framework completo — Red LiderA+
 Testea: (1) citación real desde RAG, (2) derivación correcta entre roles,
         (3) lenguaje imperativo/conclusivo, (4) artículos prohibidos.
 

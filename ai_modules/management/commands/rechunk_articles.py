@@ -1,5 +1,5 @@
 """
-Rechunking por artículo — Red SFA
+Rechunking por artículo — Red LiderA+
 Genera chunks finos (1 artículo = 1 chunk) para documentos normativos.
 
 Los nuevos chunks usan document_name = "<original>__art" y coexisten

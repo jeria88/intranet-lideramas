@@ -1,5 +1,5 @@
 """
-Protocolos inyectables para asistentes IA v2 — Red SFA.
+Protocolos inyectables para asistentes IA v2 — Red LiderA+.
 
 Cada protocolo es un bloque de texto que se inserta dinámicamente en el mensaje
 del usuario cuando las palabras clave de su consulta lo activan.

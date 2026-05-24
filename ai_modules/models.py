@@ -33,7 +33,7 @@ class AIAssistant(models.Model):
 class AIKnowledgeBase(models.Model):
     NIVEL_CHOICES = [
         ('institucional',  'Institucional (solo este colegio)'),
-        ('congregacional', 'Congregacional (toda la red SFA)'),
+        ('congregacional', 'Congregacional (toda la Red LiderA+)'),
         ('nacional',       'Nacional (normativa pública)'),
     ]
 

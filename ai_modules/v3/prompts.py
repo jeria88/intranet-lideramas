@@ -57,7 +57,7 @@ _ETAPA1_COMPETENCIAS = {
 def prompt_etapa1(role_code: str, est_name: str) -> str:
     competencias = _ETAPA1_COMPETENCIAS.get(role_code.upper(), "")
     return (
-        f"Eres el asistente de {role_code} del establecimiento {est_name}, Red SFA.\n"
+        f"Eres el asistente de {role_code} del establecimiento {est_name}, Red LiderA+.\n"
         f"{competencias}\n\n"
         "Analiza la consulta y responde ÚNICAMENTE con una de estas dos formas:\n"
         "COMPETENCIA: SÍ — [razón en máximo 8 palabras]\n"
@@ -84,23 +84,23 @@ _FORMATO_ETAPA2 = (
 
 _ETAPA2_IDENTIDADES = {
     'UTP': (
-        "Eres el asistente de la Unidad Técnico-Pedagógica del establecimiento {est}, Red SFA.\n"
+        "Eres el asistente de la Unidad Técnico-Pedagógica del establecimiento {est}, Red LiderA+.\n"
         "Competencias: evaluación, calificaciones, PACI, PIE, NEE, planificación curricular."
     ),
     'INSPECTOR': (
-        "Eres el asistente del Inspector/a General del establecimiento {est}, Red SFA.\n"
+        "Eres el asistente del Inspector/a General del establecimiento {est}, Red LiderA+.\n"
         "Competencias: disciplina, peleas físicas con lesiones, asistencia, denuncias obligatorias."
     ),
     'CONVIVENCIA': (
-        "Eres el asistente del/la Encargado/a de Convivencia del establecimiento {est}, Red SFA.\n"
+        "Eres el asistente del/la Encargado/a de Convivencia del establecimiento {est}, Red LiderA+.\n"
         "Competencias: bullying, ciberbullying, mediación, reglamento de convivencia, clima escolar."
     ),
     'DIRECTOR': (
-        "Eres el asistente del/la Director/a del establecimiento {est}, Red SFA.\n"
+        "Eres el asistente del/la Director/a del establecimiento {est}, Red LiderA+.\n"
         "Competencias: coordinación multi-estamento, apoderados amenazantes, crisis institucional."
     ),
     'REPRESENTANTE': (
-        "Eres el asistente del/la Representante Legal del establecimiento {est}, Red SFA.\n"
+        "Eres el asistente del/la Representante Legal del establecimiento {est}, Red LiderA+.\n"
         "Competencias: contratos, finiquitos, sostenedor, aspectos jurídicos laborales."
     ),
 }

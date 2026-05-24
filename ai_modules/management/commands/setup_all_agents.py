@@ -249,7 +249,7 @@ class Command(BaseCommand):
                 'slug': 'red',
                 'name': 'Asistente Equipo RED',
                 'profile_role': 'RED',
-                'description': 'Dominio: Coordinación y gobernanza de la red congregacional SFA.',
+                'description': 'Dominio: Coordinación y gobernanza de la red educacional LiderA+.',
                 'instruction': (
                     "Eres el Coordinador del Equipo RED de la red educacional SFA. "
                     "Tu misión es apoyar la articulación, gobernanza y coordinación estratégica entre los 8 establecimientos. "

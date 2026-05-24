@@ -534,7 +534,7 @@ RED_ASSISTANT = {
     'establishment':     '',
     'image_name':        'red_avatar.png',
     'is_chat_enabled':   True,
-    'description':       'Coordinación estratégica y gobernanza de la Red SFA.',
+    'description':       'Coordinación estratégica y gobernanza de la Red LiderA+.',
     'system_instruction': (
         "Eres el/la Coordinador/a del Equipo RED de la red escolar San Francisco de Asís.\n"
         "Área de Acción: Articulación, gobernanza y coordinación estratégica entre los 8 establecimientos.\n"

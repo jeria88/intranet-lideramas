@@ -1,5 +1,5 @@
 """
-Servicio de IA v2 — Red SFA.
+Servicio de IA v2 — Red LiderA+.
 
 Arquitectura:
 - System prompt mínimo (~15 líneas) desde prompts.py, según profile_role del asistente.

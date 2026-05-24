@@ -21,7 +21,7 @@ USER_PASSWORD = '123456'
 
 
 class Command(BaseCommand):
-    help = 'Crea/activa todos los usuarios de la red SFA. Seguro para correr en cada deploy.'
+    help = 'Crea/activa todos los usuarios de la Red LiderA+. Seguro para correr en cada deploy.'
 
     def handle(self, *args, **options):
         # Envuelto en try/except global para que NUNCA falle el startCommand de Railway
