@@ -245,6 +245,83 @@ class MigracionAOrganizacionesTests(TestCase):
         self.assertIsNone(user.establecimiento)
 
 
+class ConsolidacionDeDuplicadosTests(TestCase):
+    """Migración 0007 — `unique_together` no distingue 'TEMUCO' de 'temuco'.
+
+    Caso real: la base traía ambas variantes y quedaron como dos sedes.
+    """
+
+    @staticmethod
+    def _consolidar():
+        import importlib
+        from django.apps import apps as global_apps
+        mod = importlib.import_module('users.migrations.0007_consolidar_establecimientos_duplicados')
+        mod.consolidar(global_apps, None)
+
+    def setUp(self):
+        self.org = Organizacion.objects.create(slug='org_x', nombre='Org X')
+        # `save()` normaliza, así que para reproducir el estado sucio hay que
+        # escribir el código en minúsculas saltándose el modelo.
+        self.canonico = Establecimiento.objects.create(organizacion=self.org, codigo='TEMUCO', nombre='Temuco')
+        # El duplicado nace con un código provisional y se renombra por UPDATE:
+        # `save()` lo normalizaría a 'TEMUCO' y chocaría con el unique_together.
+        self.duplicado = Establecimiento.objects.create(
+            organizacion=self.org, codigo='TEMUCO_SUCIO', nombre='Temuco',
+        )
+        Establecimiento.objects.filter(pk=self.duplicado.pk).update(codigo='temuco')
+        self.duplicado.refresh_from_db()
+
+    def test_el_modelo_normaliza_el_codigo_al_guardar(self):
+        est = Establecimiento.objects.create(organizacion=self.org, codigo='  angol  ', nombre='Angol')
+        self.assertEqual(est.codigo, 'ANGOL')
+
+    def test_consolida_las_dos_sedes_en_una(self):
+        self._consolidar()
+        sedes = Establecimiento.objects.filter(organizacion=self.org, codigo__iexact='TEMUCO')
+        self.assertEqual(sedes.count(), 1)
+        self.assertEqual(sedes.first().codigo, 'TEMUCO')
+
+    def test_los_usuarios_del_duplicado_se_mudan_al_canonico(self):
+        user = User.objects.create_user(
+            username='testuser', password='x', tenant='org_x', establishment='temuco',
+        )
+        user.establecimiento = self.duplicado
+        user.save(update_fields=['establecimiento'])
+
+        self._consolidar()
+
+        user.refresh_from_db()
+        self.assertEqual(user.establecimiento_id, self.canonico.pk)
+        self.assertEqual(user.establishment, 'TEMUCO', 'el CharField también se normaliza')
+        self.assertFalse(Establecimiento.objects.filter(pk=self.duplicado.pk).exists())
+
+    def test_no_pierde_el_flag_de_equipo_central_del_duplicado(self):
+        Establecimiento.objects.filter(pk=self.duplicado.pk).update(es_equipo_central=True)
+        self._consolidar()
+        self.assertTrue(Establecimiento.objects.get(pk=self.canonico.pk).es_equipo_central)
+
+    def test_no_pierde_el_rbd_que_solo_tenia_el_duplicado(self):
+        Establecimiento.objects.filter(pk=self.duplicado.pk).update(rbd='12345')
+        self._consolidar()
+        self.assertEqual(Establecimiento.objects.get(pk=self.canonico.pk).rbd, '12345')
+
+    def test_no_toca_sedes_de_otra_organizacion_con_el_mismo_codigo(self):
+        """Dos organizaciones pueden tener una sede 'TEMUCO' cada una."""
+        otra = Organizacion.objects.create(slug='org_y', nombre='Org Y')
+        suya = Establecimiento.objects.create(organizacion=otra, codigo='TEMUCO', nombre='Temuco')
+
+        self._consolidar()
+
+        self.assertTrue(Establecimiento.objects.filter(pk=suya.pk).exists())
+        self.assertEqual(Establecimiento.objects.filter(codigo='TEMUCO').count(), 2)
+
+    def test_es_idempotente(self):
+        self._consolidar()
+        n = Establecimiento.objects.count()
+        self._consolidar()
+        self.assertEqual(Establecimiento.objects.count(), n)
+
+
 class PropiedadesDeUsuarioTests(TestCase):
     """Reglas de negocio que hoy cuelgan de CharFields y que el refactor va a mover."""
 

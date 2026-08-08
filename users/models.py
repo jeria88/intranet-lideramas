@@ -50,6 +50,15 @@ class Establecimiento(models.Model):
         ordering = ['organizacion', 'nombre']
         unique_together = [('organizacion', 'codigo')]
 
+    def save(self, *args, **kwargs):
+        # `unique_together` no distingue 'TEMUCO' de 'temuco' y deja pasar la
+        # sede duplicada. Pasó de verdad: el CharField libre que esta tabla
+        # reemplaza acumuló ambas variantes. Se normaliza en el único punto por
+        # el que entran todas las escrituras.
+        if self.codigo:
+            self.codigo = self.codigo.strip().upper()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.nombre} ({self.organizacion.slug})"
 
