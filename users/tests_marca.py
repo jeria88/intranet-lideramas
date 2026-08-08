@@ -34,7 +34,7 @@ SEDES = ['TEMUCO', 'LAUTARO', 'RENAICO', 'IMPERIAL', 'ERCILLA', 'ARAUCO', 'ANGOL
 
 EXCLUIDOS = (
     '/migrations/', '/scratch/', '/.venv/', '/venv/', '/eval_results/',
-    '/node_modules/', '/staticfiles/', '/knowledge_base/', '/.git/',
+    '/node_modules/', '/staticfiles/', '/.git/',
     # Este archivo contiene los patrones por definición.
     'tests_marca.py',
 )
