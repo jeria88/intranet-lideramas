@@ -468,6 +468,23 @@ class CrearOrganizacionTests(TestCase):
         with self.assertRaises(CommandError):
             self._crear(establecimientos='  ,  ')
 
+    def test_se_puede_dar_de_alta_con_modulos_acotados(self):
+        self._crear(modulos='simce,biblioteca')
+        org = Organizacion.objects.get(slug='colegio-test')
+        self.assertEqual(org.modulos, ['simce', 'biblioteca'])
+        self.assertTrue(org.tiene_modulo('simce'))
+        self.assertFalse(org.tiene_modulo('asistentes'))
+
+    def test_sin_modulos_queda_con_todos(self):
+        self._crear()
+        self.assertEqual(Organizacion.objects.get(slug='colegio-test').modulos, [])
+
+    def test_un_modulo_inventado_falla_antes_de_crear_nada(self):
+        from django.core.management.base import CommandError
+        with self.assertRaises(CommandError):
+            self._crear(modulos='simce,teletransportacion')
+        self.assertFalse(Organizacion.objects.filter(slug='colegio-test').exists())
+
 
 class PropiedadesDeUsuarioTests(TestCase):
     """Reglas de negocio que hoy cuelgan de CharFields y que el refactor va a mover."""

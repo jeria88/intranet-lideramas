@@ -52,6 +52,14 @@ class Command(BaseCommand):
             '--actualizar-prompts', action='store_true',
             help='Refresca el system_instruction de los asistentes ya existentes.',
         )
+        parser.add_argument(
+            '--modulos', default='',
+            help=(
+                'Códigos separados por coma: '
+                + ', '.join(Organizacion.CODIGOS_MODULO)
+                + '. Vacío = todos.'
+            ),
+        )
 
     @transaction.atomic
     def handle(self, *args, **opciones):
@@ -63,9 +71,20 @@ class Command(BaseCommand):
         if not nombres:
             raise CommandError('Hay que indicar al menos un establecimiento.')
 
+        modulos = [m.strip() for m in opciones['modulos'].split(',') if m.strip()]
+        desconocidos = set(modulos) - set(Organizacion.CODIGOS_MODULO)
+        if desconocidos:
+            raise CommandError(
+                f'Módulos desconocidos: {", ".join(sorted(desconocidos))}. '
+                f'Válidos: {", ".join(Organizacion.CODIGOS_MODULO)}.'
+            )
+
         organizacion, creada = Organizacion.objects.get_or_create(
-            slug=slug, defaults={'nombre': opciones['nombre']},
+            slug=slug, defaults={'nombre': opciones['nombre'], 'modulos': modulos},
         )
+        if not creada and modulos and organizacion.modulos != modulos:
+            organizacion.modulos = modulos
+            organizacion.save(update_fields=['modulos'])
         self.stdout.write(
             self.style.SUCCESS(f'[+] Organización creada: {organizacion.nombre} ({slug})')
             if creada else f'[=] Organización existente: {organizacion.nombre} ({slug})'
