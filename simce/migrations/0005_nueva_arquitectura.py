@@ -3,6 +3,18 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def _set_constraints_immediate(apps, schema_editor):
+    """`SET CONSTRAINTS` solo existe en PostgreSQL.
+
+    En SQLite (tests locales, dev sin Postgres) no hay triggers diferidos que
+    forzar, así que la operación es un no-op. Antes iba como RunSQL crudo y
+    reventaba toda la suite con `OperationalError: near "SET": syntax error`,
+    lo que dejaba el proyecto sin forma de correr tests.
+    """
+    if schema_editor.connection.vendor == 'postgresql':
+        schema_editor.execute("SET CONSTRAINTS ALL IMMEDIATE;")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -36,10 +48,10 @@ class Migration(migrations.Migration):
             reverse_sql=migrations.RunSQL.noop,
         ),
 
-        # Forzar ejecución de triggers diferidos antes de ALTER TABLE
-        migrations.RunSQL(
-            "SET CONSTRAINTS ALL IMMEDIATE;",
-            reverse_sql=migrations.RunSQL.noop,
+        # Forzar ejecución de triggers diferidos antes de ALTER TABLE (solo PostgreSQL)
+        migrations.RunPython(
+            _set_constraints_immediate,
+            migrations.RunPython.noop,
         ),
 
         # ── Pregunta: quitar unique_together viejo ────────────────────
