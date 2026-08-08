@@ -325,6 +325,150 @@ class ConsolidacionDeDuplicadosTests(TestCase):
         self.assertEqual(Establecimiento.objects.count(), n)
 
 
+class PurgarOrganizacionTests(TestCase):
+    """Baja de un cliente. Es destructiva, así que se prueba lo que puede salir mal."""
+
+    def setUp(self):
+        from io import StringIO
+        self.salida = StringIO()
+        self.org = Organizacion.objects.create(slug='cliente_x', nombre='Cliente X')
+        self.sede = Establecimiento.objects.create(
+            organizacion=self.org, codigo='SEDE', nombre='Sede',
+        )
+        self.normal = User.objects.create_user(
+            username='director', password='x', tenant='cliente_x',
+            establishment='SEDE', organizacion=self.org, establecimiento=self.sede,
+        )
+        self.soporte = User.objects.create_superuser(
+            username='soporte', password='x', tenant='cliente_x',
+            establishment='SEDE', organizacion=self.org, establecimiento=self.sede,
+        )
+
+    def _correr(self, **extra):
+        from django.core.management import call_command
+        call_command('purgar_organizacion', slug='cliente_x', stdout=self.salida, **extra)
+        return self.salida.getvalue()
+
+    def test_sin_confirmar_no_borra_nada(self):
+        salida = self._correr()
+        self.assertIn('Nada se borró', salida)
+        self.assertTrue(Organizacion.objects.filter(slug='cliente_x').exists())
+        self.assertTrue(User.objects.filter(username='director').exists())
+
+    def test_confirmando_borra_la_organizacion_y_sus_usuarios(self):
+        self._correr(confirmar='cliente_x')
+        self.assertFalse(Organizacion.objects.filter(slug='cliente_x').exists())
+        self.assertFalse(User.objects.filter(username='director').exists())
+        self.assertEqual(Establecimiento.objects.filter(codigo='SEDE').count(), 0)
+
+    def test_el_superusuario_sobrevive_sin_rastro_del_cliente(self):
+        """No basta con soltar las FK: los CharFields espejo dejaban al superusuario
+        apuntando por nombre a una organización que ya no existe."""
+        self._correr(confirmar='cliente_x')
+
+        soporte = User.objects.get(username='soporte')
+        self.assertIsNone(soporte.organizacion)
+        self.assertIsNone(soporte.establecimiento)
+        self.assertEqual(soporte.tenant, '')
+        self.assertEqual(soporte.establishment, '')
+
+    def test_informa_los_usuarios_borrados_no_el_total_en_cascada(self):
+        """`delete()` devuelve el total de objetos; informarlo como usuarios infla
+        el número con todo lo que cuelga de ellos."""
+        salida = self._correr(confirmar='cliente_x')
+        self.assertIn('Usuarios borrados: 1', salida)
+
+    def test_una_organizacion_inexistente_falla_claro(self):
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+        with self.assertRaises(CommandError):
+            call_command('purgar_organizacion', slug='no_existe', stdout=self.salida)
+
+    def test_no_toca_otras_organizaciones(self):
+        otra = Organizacion.objects.create(slug='cliente_y', nombre='Cliente Y')
+        ajeno = User.objects.create_user(
+            username='ajeno', password='x', tenant='cliente_y', organizacion=otra,
+        )
+
+        self._correr(confirmar='cliente_x')
+
+        self.assertTrue(Organizacion.objects.filter(pk=otra.pk).exists())
+        self.assertTrue(User.objects.filter(pk=ajeno.pk).exists())
+
+
+class CrearOrganizacionTests(TestCase):
+    """Alta de un cliente sin tocar código — reemplaza a `setup_all_establishments`."""
+
+    def _crear(self, **extra):
+        from io import StringIO
+        from django.core.management import call_command
+        salida = StringIO()
+        opciones = {
+            'slug': 'colegio-test', 'nombre': 'Colegio Test',
+            'establecimientos': 'Sede Uno,Sede Dos',
+            'stdout': salida,
+        }
+        opciones.update(extra)
+        call_command('crear_organizacion', **opciones)
+        return salida.getvalue()
+
+    def test_crea_organizacion_sedes_y_asistentes(self):
+        from ai_modules.models import AIAssistant
+        self._crear()
+
+        org = Organizacion.objects.get(slug='colegio-test')
+        # 2 sedes + equipo central
+        self.assertEqual(org.establecimientos.count(), 3)
+        # 5 roles x 2 sedes + 1 central
+        self.assertEqual(AIAssistant.objects.filter(organizacion=org).count(), 11)
+
+    def test_los_prompts_no_llevan_marca_de_ningun_cliente(self):
+        from ai_modules.models import AIAssistant
+        self._crear()
+
+        import re
+
+        from users.tests_marca import PATRONES
+
+        for prompt in AIAssistant.objects.filter(
+            organizacion__slug='colegio-test'
+        ).values_list('system_instruction', flat=True):
+            for patron in PATRONES:
+                self.assertIsNone(
+                    re.search(patron, prompt, re.IGNORECASE),
+                    f'el prompt generado contiene marca de cliente: {patron}',
+                )
+
+    def test_el_prompt_nombra_la_sede_correcta(self):
+        from ai_modules.models import AIAssistant
+        self._crear()
+        asistente = AIAssistant.objects.get(slug='colegio-test-inspector-sede_uno')
+        self.assertIn('Sede Uno', asistente.system_instruction)
+
+    def test_es_idempotente(self):
+        from ai_modules.models import AIAssistant
+        self._crear()
+        n = AIAssistant.objects.count()
+        salida = self._crear()
+        self.assertEqual(AIAssistant.objects.count(), n)
+        self.assertIn('ya existían', salida)
+
+    def test_dos_organizaciones_no_colisionan_de_slug(self):
+        """El slug del asistente lleva prefijo de organización: dos clientes pueden
+        tener la misma sede y el mismo rol."""
+        from ai_modules.models import AIAssistant
+        self._crear()
+        self._crear(slug='otro-colegio', nombre='Otro Colegio', establecimientos='Sede Uno')
+
+        self.assertTrue(AIAssistant.objects.filter(slug='colegio-test-utp-sede_uno').exists())
+        self.assertTrue(AIAssistant.objects.filter(slug='otro-colegio-utp-sede_uno').exists())
+
+    def test_sin_establecimientos_falla(self):
+        from django.core.management.base import CommandError
+        with self.assertRaises(CommandError):
+            self._crear(establecimientos='  ,  ')
+
+
 class PropiedadesDeUsuarioTests(TestCase):
     """Reglas de negocio que hoy cuelgan de CharFields y que el refactor va a mover."""
 

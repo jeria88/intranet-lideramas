@@ -3,8 +3,8 @@
 Es destructivo y no tiene vuelta atrás: exige `--confirmar` con el slug exacto.
 Sin esa bandera solo informa qué borraría, que es la forma normal de usarlo.
 
-    python manage.py purgar_organizacion --slug sfa            # informe
-    python manage.py purgar_organizacion --slug sfa --confirmar sfa
+    python manage.py purgar_organizacion --slug colegio-x              # informe
+    python manage.py purgar_organizacion --slug colegio-x --confirmar colegio-x
 
 Los superusuarios NO se borran: son soporte del producto, no del cliente. Se les
 suelta la organización para que sobrevivan a la baja y sigan pudiendo entrar.
@@ -66,11 +66,21 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             # Los superusuarios primero: `User.organizacion` es PROTECT y bloquearía
-            # el borrado de la organización.
-            a_conservar.update(organizacion=None, establecimiento=None)
-            borrados_usuarios = a_borrar.delete()[0]
+            # el borrado de la organización. Se limpian también los CharFields
+            # espejo — si no, el superusuario queda apuntando por nombre a una
+            # organización que ya no existe.
+            a_conservar.update(
+                organizacion=None, establecimiento=None, tenant='', establishment='',
+            )
+            _, por_modelo = a_borrar.delete()
             organizacion.delete()  # CASCADE se lleva sedes y datos de negocio
 
+        # `delete()` devuelve el total en cascada, no los usuarios: informarlo como
+        # "usuarios borrados" infla el número con sus objetos relacionados.
+        usuarios_borrados = por_modelo.get('users.User', 0)
+        relacionados = sum(n for modelo, n in por_modelo.items() if modelo != 'users.User')
+
         self.stdout.write(self.style.SUCCESS(
-            f'\nOrganización "{slug}" eliminada. Usuarios borrados: {borrados_usuarios}.'
+            f'\nOrganización "{slug}" eliminada. '
+            f'Usuarios borrados: {usuarios_borrados} (+{relacionados} objetos relacionados).'
         ))
