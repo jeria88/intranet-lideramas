@@ -628,7 +628,11 @@ def admin_crear_test(request):
 # ── Estudiante: Identificación ────────────────────────────────────
 
 def prueba_identificacion(request, pk, modo='simce'):
-    prueba = get_object_or_404(Prueba, pk=pk, estado='publicada')
+    # `Prueba.todos` y no `Prueba.objects`: el estudiante rinde sin cuenta, así que
+    # es anónimo y no tiene organización. Con el manager filtrado, toda prueba le
+    # daría 404 aunque el link sea correcto y esté publicada. Lo que autoriza el
+    # acceso acá es `estado='publicada'`, no la pertenencia a una organización.
+    prueba = get_object_or_404(Prueba.todos, pk=pk, estado='publicada')
     if modo not in ('simce', 'pistas'):
         modo = 'simce'
 

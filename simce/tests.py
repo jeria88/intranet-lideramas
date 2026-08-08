@@ -163,6 +163,72 @@ class PruebaTests(TestCase):
         self.assertEqual(list(Prueba.objects.filter(creada_por=b).values_list('titulo', flat=True)), ['De B'])
 
 
+class RendicionPublicaTests(TestCase):
+    """El estudiante rinde SIN cuenta: `prueba_identificacion` y compañía no llevan
+    `@login_required`.
+
+    Eso choca con el aislamiento por request: un anónimo no tiene organización, y
+    el manager por defecto le devolvería cero filas — la prueba daría 404 aunque
+    esté publicada y el link sea correcto. Estas vistas tienen que consultar sin
+    el filtro, apoyándose en el gate que ya existe (`estado='publicada'`).
+    """
+
+    def setUp(self):
+        from users.models import Organizacion
+
+        self.org = Organizacion.objects.create(slug='colegio_x', nombre='Colegio X')
+        self.prueba, self.preguntas = _cadena_minima(n_preguntas=2)
+        self.prueba.organizacion = self.org
+        self.prueba.estado = 'publicada'
+        self.prueba.save(update_fields=['organizacion', 'estado'])
+
+    def test_un_anonimo_puede_abrir_la_identificacion_de_una_prueba_publicada(self):
+        from django.urls import reverse
+
+        resp = self.client.get(reverse('simce:prueba_identificacion', args=[self.prueba.pk, 'simce']))
+        self.assertEqual(
+            resp.status_code, 200,
+            'el estudiante anónimo no puede abrir una prueba publicada: el filtro '
+            'por organización lo está dejando fuera',
+        )
+
+    def test_un_anonimo_puede_identificarse_y_empezar(self):
+        from django.urls import reverse
+
+        resp = self.client.post(
+            reverse('simce:prueba_identificacion', args=[self.prueba.pk, 'simce']),
+            {'nombre': 'Ana Pérez', 'rut': '11111111-1', 'curso': '4B',
+             'letra': 'A', 'establecimiento': 'SEDE', 'rbd': '12345'},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(SesionEstudiante.objects.count(), 1)
+
+    def test_un_anonimo_puede_rendir_y_ver_su_resultado(self):
+        from django.urls import reverse
+
+        sesion = SesionEstudiante.objects.create(
+            prueba=self.prueba, nombre='Ana', rut='11111111-1',
+            establecimiento='SEDE', curso='4B', letra_curso='A',
+        )
+        self.assertEqual(
+            self.client.get(reverse('simce:prueba_rendir', args=[sesion.pk])).status_code, 200
+        )
+
+        sesion.calcular_puntajes()
+        self.assertEqual(
+            self.client.get(reverse('simce:prueba_resultado', args=[sesion.pk])).status_code, 200
+        )
+
+    def test_una_prueba_no_publicada_sigue_sin_ser_accesible(self):
+        """Quitar el filtro por organización no puede abrir lo que no está publicado."""
+        from django.urls import reverse
+
+        self.prueba.estado = 'borrador'
+        self.prueba.save(update_fields=['estado'])
+        resp = self.client.get(reverse('simce:prueba_identificacion', args=[self.prueba.pk, 'simce']))
+        self.assertEqual(resp.status_code, 404)
+
+
 class TextoBibliotecaTests(TestCase):
     def test_word_count_y_char_count_se_calculan_al_guardar(self):
         texto = TextoBiblioteca.objects.create(

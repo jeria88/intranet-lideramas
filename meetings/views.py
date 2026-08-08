@@ -378,13 +378,13 @@ def recording_webhook(request):
             # Daily NO envía download_url en el webhook — solo room_name + recording_id
             # El pipeline resuelve el link real via GET /recordings/{id}/access-link
             if room_id and recording_id:
-                room = MeetingRoom.objects.filter(daily_identifier=room_id).first()
+                room = MeetingRoom.todos.filter(daily_identifier=room_id).first()
                 if not room:
                     print(f"⚠️ Webhook: Sala '{room_id}' no encontrada en la base de datos.")
                     return JsonResponse({"status": "ignored", "reason": "room_not_found"})
 
                 now = timezone.now()
-                booking = MeetingBooking.objects.filter(
+                booking = MeetingBooking.todos.filter(
                     room=room,
                     scheduled_at__lte=now + timezone.timedelta(hours=1)
                 ).order_by('-scheduled_at').first()
@@ -456,9 +456,9 @@ def sync_daily_recordings(request):
             room_name = (rec.get('room_name') or "").lower().strip()
 
             if room_name and recording_id:
-                room = MeetingRoom.objects.filter(daily_identifier__iexact=room_name).first()
+                room = MeetingRoom.todos.filter(daily_identifier__iexact=room_name).first()
                 if room:
-                    booking = MeetingBooking.objects.filter(
+                    booking = MeetingBooking.todos.filter(
                         Q(recording_url__isnull=True) | Q(recording_url=''),
                         room=room
                     ).order_by('-scheduled_at').first()
@@ -568,7 +568,11 @@ def api_pending_meetings(request):
     if not _check_api_key(request):
         return JsonResponse({"error": "Unauthorized"}, status=401)
 
-    pending = MeetingBooking.objects.filter(
+    # `.todos` y no `.objects`: estas llamadas no traen usuario — el webhook lo
+    # dispara Daily.co y la API interna la llama el worker con X-Internal-API-Key.
+    # Sin usuario no hay organización, y el manager filtrado devolvería cero filas:
+    # la grabación nunca se procesaría y el acta nunca llegaría.
+    pending = MeetingBooking.todos.filter(
         processing_status__in=['pendiente', 'fallido'],
         recording_url__isnull=False
     ).exclude(recording_url='').select_related('room').prefetch_related('attendances__user')[:10]
@@ -599,7 +603,7 @@ def api_update_meeting(request, pk):
     if request.method != 'POST':
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
-    booking = get_object_or_404(MeetingBooking, pk=pk)
+    booking = get_object_or_404(MeetingBooking.todos, pk=pk)
 
     try:
         body = json.loads(request.body)
@@ -688,7 +692,7 @@ def api_start_processing(request, pk):
     if not _check_api_key(request):
         return JsonResponse({"error": "Unauthorized"}, status=401)
 
-    booking = get_object_or_404(MeetingBooking, pk=pk)
+    booking = get_object_or_404(MeetingBooking.todos, pk=pk)
     booking.processing_status = 'procesando'
     booking.save(update_fields=['processing_status'])
     return JsonResponse({"status": "processing_started"})
