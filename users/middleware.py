@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.shortcuts import redirect
 
 from users.scoping import alcance_de, fijar_alcance, restaurar_alcance
@@ -38,6 +39,50 @@ class TenantMiddleware:
             return self.get_response(request)
         finally:
             restaurar_alcance(token)
+
+
+class ModuloContratadoMiddleware:
+    """Corta el acceso a los módulos que la organización no contrató.
+
+    Va por prefijo de URL y no con un decorador por vista: los módulos tienen
+    decenas de vistas cada uno y la que se olvide del decorador queda abierta.
+    El mapa se lee contra `config/urls.py`, no se deriva del nombre de la app.
+
+    Denegar es `messages.error` + `redirect` (nunca un 403 crudo): el usuario
+    llegó por un enlace del menú, no está atacando nada.
+    """
+
+    PREFIJOS = {
+        '/ia/': 'asistentes',
+        '/simce/': 'simce',
+        '/salas/': 'reuniones',
+        '/mejora/': 'mejora',
+        '/biblioteca/': 'biblioteca',
+    }
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        codigo = next(
+            (m for prefijo, m in self.PREFIJOS.items() if request.path.startswith(prefijo)),
+            None,
+        )
+        if codigo:
+            user = getattr(request, 'user', None)
+            organizacion = getattr(user, 'organizacion', None) if user else None
+            # Sin organización no se decide acá: de eso ya se ocupan el login y el
+            # aislamiento. Un anónimo rindiendo SIMCE tiene que poder pasar.
+            if organizacion is not None and not organizacion.tiene_modulo(codigo):
+                etiqueta = dict(organizacion.MODULOS).get(codigo, codigo)
+                messages.error(
+                    request,
+                    f'El módulo «{etiqueta}» no está incluido en el plan de '
+                    f'{organizacion.nombre}. Habla con tu administrador para activarlo.',
+                )
+                return redirect('portal:index')
+
+        return self.get_response(request)
 
 
 class ForcePasswordChangeMiddleware:

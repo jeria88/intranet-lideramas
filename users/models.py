@@ -10,10 +10,25 @@ class Organizacion(models.Model):
     lleva `User.tenant`, así que la migración de datos es una equivalencia 1:1 y
     el login por path (`/<tenant>/login/`) sigue funcionando sin cambios.
     """
+    # Módulos que se contratan por separado. El resto (portal, mensajería,
+    # notificaciones, calendario, encuesta) es base y va siempre incluido.
+    MODULOS = [
+        ('asistentes', 'Asesores IA normativos'),
+        ('simce', 'Ensayos SIMCE'),
+        ('reuniones', 'Reuniones con acta IA'),
+        ('mejora', 'Ciclo de mejora / PME'),
+        ('biblioteca', 'Biblioteca documental'),
+    ]
+    CODIGOS_MODULO = [codigo for codigo, _ in MODULOS]
+
     slug = models.SlugField(unique=True, verbose_name='Identificador (URL)')
     nombre = models.CharField(max_length=150)
     activa = models.BooleanField(default=True)
     creada_en = models.DateTimeField(auto_now_add=True)
+    modulos = models.JSONField(
+        default=list, blank=True, verbose_name='Módulos contratados',
+        help_text='Lista de códigos. Vacío = todos, para no romper a quien ya estaba.',
+    )
 
     class Meta:
         ordering = ['nombre']
@@ -22,6 +37,17 @@ class Organizacion(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def tiene_modulo(self, codigo):
+        """Una lista vacía significa "todo contratado", no "nada".
+
+        Es deliberado: el campo se agregó sobre organizaciones que ya existían y
+        usaban todo. El default seguro acá es no quitarle el acceso a nadie de un
+        día para otro; restringir es un acto explícito.
+        """
+        if not self.modulos:
+            return True
+        return codigo in self.modulos
 
 
 class Establecimiento(models.Model):

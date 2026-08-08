@@ -266,6 +266,80 @@ class AlcanceImplicitoTests(TestCase):
         self.assertIs(alcance_actual(), FUERA_DE_REQUEST)
 
 
+class ModulosContratadosTests(TestCase):
+    """Vender los módulos por separado exige poder no dárselos a quien no los pagó."""
+
+    def setUp(self):
+        self.org = Organizacion.objects.create(slug='colegio_m', nombre='Colegio M')
+        self.user = User.objects.create_user(
+            username='director', password='clave', tenant='colegio_m', organizacion=self.org,
+        )
+        self.client.force_login(self.user)
+
+    def test_sin_lista_de_modulos_tiene_todo(self):
+        """Default seguro: el campo se agregó sobre organizaciones que ya usaban
+        todo, y quitarles el acceso de un día para otro sería el bug."""
+        for codigo in Organizacion.CODIGOS_MODULO:
+            self.assertTrue(self.org.tiene_modulo(codigo), codigo)
+
+    def test_con_lista_solo_tiene_lo_contratado(self):
+        self.org.modulos = ['simce']
+        self.org.save(update_fields=['modulos'])
+
+        self.assertTrue(self.org.tiene_modulo('simce'))
+        self.assertFalse(self.org.tiene_modulo('asistentes'))
+
+    def test_un_modulo_no_contratado_no_se_abre(self):
+        self.org.modulos = ['simce']
+        self.org.save(update_fields=['modulos'])
+
+        resp = self.client.get('/ia/', follow=True)
+        self.assertNotEqual(resp.status_code, 403, 'no debe ser un 403 crudo')
+        mensajes = [str(m) for m in resp.context['messages']]
+        self.assertTrue(
+            any('no está incluido en el plan' in m for m in mensajes),
+            f'no se explicó por qué se denegó: {mensajes}',
+        )
+
+    def test_el_modulo_contratado_si_se_abre(self):
+        self.org.modulos = ['simce']
+        self.org.save(update_fields=['modulos'])
+
+        resp = self.client.get('/simce/', follow=True)
+        mensajes = [str(m) for m in getattr(resp, 'context', {}).get('messages', [])]
+        self.assertFalse(any('no está incluido en el plan' in m for m in mensajes))
+
+    def test_los_modulos_base_no_se_cortan(self):
+        """Portal, mensajería y calendario van incluidos: no están en el mapa."""
+        self.org.modulos = ['simce']
+        self.org.save(update_fields=['modulos'])
+
+        from users.middleware import ModuloContratadoMiddleware
+        for prefijo in ('/', '/mensajes/', '/calendario/', '/notificaciones/'):
+            self.assertNotIn(prefijo, ModuloContratadoMiddleware.PREFIJOS)
+
+    def test_el_mapa_de_prefijos_apunta_a_rutas_reales(self):
+        """Si alguien renombra una ruta en config/urls.py, el corte deja de aplicar
+        y el módulo queda abierto sin que nada falle."""
+        from django.urls import resolve
+
+        from users.middleware import ModuloContratadoMiddleware
+        for prefijo in ModuloContratadoMiddleware.PREFIJOS:
+            try:
+                resolve(prefijo)
+            except Exception as exc:  # noqa: BLE001 - queremos el mensaje concreto
+                self.fail(f'el prefijo {prefijo} no resuelve a ninguna vista: {exc}')
+
+    def test_todos_los_modulos_declarados_tienen_prefijo(self):
+        from users.middleware import ModuloContratadoMiddleware
+
+        cubiertos = set(ModuloContratadoMiddleware.PREFIJOS.values())
+        self.assertEqual(
+            set(Organizacion.CODIGOS_MODULO) - cubiertos, set(),
+            'hay un módulo que se cobra pero que nadie corta',
+        )
+
+
 class CoberturaDelAislamientoTests(TestCase):
     """Meta-test: que no se agregue un modelo de negocio sin aislar.
 

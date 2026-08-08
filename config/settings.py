@@ -67,6 +67,9 @@ MIDDLEWARE = [
     'users.middleware.ForcePasswordChangeMiddleware',
     'encuesta.middleware.EncuestaObligatoriaMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    # Después de MessageMiddleware: usa messages.error() para denegar, y
+    # request._messages no existe hasta que ese middleware corrió.
+    'users.middleware.ModuloContratadoMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
