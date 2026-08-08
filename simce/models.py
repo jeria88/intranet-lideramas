@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from users.scoping import ModeloDeOrganizacion
 
 # ── Choices ───────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ ASIGNATURA_DOC_CHOICES = ASIGNATURA_CHOICES + [('general', 'General (todas)')]
 
 # ── Biblioteca de Textos ──────────────────────────────────────────
 
-class TextoBiblioteca(models.Model):
+class TextoBiblioteca(ModeloDeOrganizacion):
     asignatura      = models.CharField(max_length=20, choices=ASIGNATURA_CHOICES, db_index=True)
     tipo_textual    = models.CharField(max_length=20, choices=TIPO_TEXTUAL_CHOICES)
     titulo          = models.CharField(max_length=200)
@@ -162,7 +163,7 @@ class AlternativaBanco(models.Model):
 
 # ── Prueba (Test) ─────────────────────────────────────────────────
 
-class Prueba(models.Model):
+class Prueba(ModeloDeOrganizacion):
     titulo       = models.CharField(max_length=200)
     asignatura   = models.CharField(max_length=20, choices=ASIGNATURA_CHOICES)
     curso        = models.CharField(max_length=3, choices=CURSO_CHOICES)
@@ -265,7 +266,7 @@ class Alternativa(models.Model):
 
 # ── RAG: Base de conocimiento SIMCE ──────────────────────────────
 
-class SimceDocumento(models.Model):
+class SimceDocumento(ModeloDeOrganizacion):
     nombre     = models.CharField(max_length=200)
     asignatura = models.CharField(max_length=20, choices=ASIGNATURA_DOC_CHOICES, default='general')
     file_path  = models.CharField(max_length=500, blank=True)

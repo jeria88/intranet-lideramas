@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from users.scoping import ModeloDeOrganizacion
 
 
 class UserActivity(models.Model):
@@ -10,7 +11,7 @@ class UserActivity(models.Model):
         return f"{self.user.username} - {self.last_activity}"
 
 
-class Circular(models.Model):
+class Circular(ModeloDeOrganizacion):
     """Reemplaza Announcement. Soporta destinatarios y flujo de aprobación."""
     PRIORITY_CHOICES = [
         ('normal', 'Normal'),

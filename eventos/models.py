@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from users.scoping import ModeloDeOrganizacion
 
 
-class EventoCultural(models.Model):
+class EventoCultural(ModeloDeOrganizacion):
     TIPO_CHOICES = [
         ('cultural', 'Cultural'),
         ('deportivo', 'Deportivo'),

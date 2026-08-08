@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from users.scoping import ModeloDeOrganizacion
 
 
-class EvaluationForm(models.Model):
+class EvaluationForm(ModeloDeOrganizacion):
     SESSION_CHOICES = [
         ('presencial', 'Reunión Presencial'),
         ('virtual',    'Reunión Virtual'),
@@ -27,7 +28,7 @@ class EvaluationForm(models.Model):
         return self.title
 
 
-class EvidenceDocument(models.Model):
+class EvidenceDocument(ModeloDeOrganizacion):
     """Documentos de evidencia de reuniones (presentaciones, actas, fotos)."""
     CATEGORY_CHOICES = [
         ('presentacion', 'Presentación'),

@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from users.scoping import ModeloDeOrganizacion
 
 
-class CalendarEvent(models.Model):
+class CalendarEvent(ModeloDeOrganizacion):
     EVENT_TYPE_CHOICES = [
         ('mineduc',          'Plazo MINEDUC'),
         ('supereduc',        'Superintendencia de Educación'),

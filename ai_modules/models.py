@@ -2,9 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from users.scoping import ModeloDeOrganizacion
 
 
-class AIAssistant(models.Model):
+class AIAssistant(ModeloDeOrganizacion):
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=100)
     profile_role = models.CharField(max_length=20, verbose_name='Rol objetivo')
@@ -54,7 +55,7 @@ class AIKnowledgeBase(models.Model):
         return f"{self.name} - {self.assistant.name}"
 
 
-class AIQuery(models.Model):
+class AIQuery(ModeloDeOrganizacion):
     STATUS_CHOICES = [
         ('pendiente',   'Pendiente'),
         ('en_proceso',  'En Proceso'),
@@ -146,7 +147,7 @@ class AIKnowledgeChunk(models.Model):
     def __str__(self):
         return f"Chunk {self.chunk_id} - {self.assistant.slug}"
 
-class AICase(models.Model):
+class AICase(ModeloDeOrganizacion):
     STATUS_CHOICES = [
         ('abierto', 'Abierto (En Proceso)'),
         ('cerrado', 'Cerrado (Resuelto)'),
@@ -182,7 +183,7 @@ class AICase(models.Model):
     def __str__(self):
         return f"[{self.get_status_display()}] {self.title} - {self.user.username}"
 
-class ChatConversation(models.Model):
+class ChatConversation(ModeloDeOrganizacion):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='conversations')
     assistant = models.ForeignKey(AIAssistant, on_delete=models.CASCADE, related_name='conversations')
     title = models.CharField(max_length=200, default='Nueva conversación')

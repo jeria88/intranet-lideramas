@@ -1,9 +1,10 @@
 from django.db import models
 from django.conf import settings
 from users.models import User
+from users.scoping import ModeloDeOrganizacion
 
 
-class Category(models.Model):
+class Category(ModeloDeOrganizacion):
     name = models.CharField(max_length=100, unique=True, verbose_name='Categoría')
     description = models.TextField(blank=True)
 
@@ -15,7 +16,7 @@ class Category(models.Model):
         ordering = ['name']
 
 
-class Document(models.Model):
+class Document(ModeloDeOrganizacion):
     title = models.CharField(max_length=255, verbose_name='Título')
     file = models.FileField(upload_to='documents/%Y/%m/%d/', verbose_name='Archivo')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='documents')

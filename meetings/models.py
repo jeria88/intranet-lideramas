@@ -1,9 +1,10 @@
 import uuid
 from django.db import models
 from django.conf import settings
+from users.scoping import ModeloDeOrganizacion
 
 
-class MeetingRoom(models.Model):
+class MeetingRoom(ModeloDeOrganizacion):
     ROOM_TYPES = [
         ('daily', 'Daily.co (Videollamadas)'),
     ]
@@ -28,7 +29,7 @@ class MeetingRoom(models.Model):
         return self.name
 
 
-class MeetingBooking(models.Model):
+class MeetingBooking(ModeloDeOrganizacion):
     STATUS_CHOICES = [
         ('programada', 'Programada'),
         ('activa',     'Activa'),

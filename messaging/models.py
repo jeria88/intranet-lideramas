@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from users.scoping import ModeloDeOrganizacion
 
 
-class Message(models.Model):
+class Message(ModeloDeOrganizacion):
     """Mensaje privado entre dos usuarios."""
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages', verbose_name='Remitente'

@@ -1,9 +1,10 @@
 from django.db import models
 from django.conf import settings
 from users.models import User
+from users.scoping import ModeloDeOrganizacion
 
 
-class ImprovementGoal(models.Model):
+class ImprovementGoal(ModeloDeOrganizacion):
     STATUS_CHOICES = [
         ('en_progreso', 'En Progreso'),
         ('cumplido',    'Cumplido'),
@@ -118,7 +119,7 @@ class ImprovementAction(models.Model):
         return f"{self.title} ({self.get_status_display()})"
 
 
-class RiskAlert(models.Model):
+class RiskAlert(ModeloDeOrganizacion):
     ALERT_TYPE_CHOICES = [
         ('plazo_mineduc',       'Plazo MINEDUC'),
         ('brecha_normativa',    'Brecha Normativa'),
