@@ -135,6 +135,137 @@ class AislamientoEntreOrganizacionesTests(TestCase):
         self.assertTrue(Category.objects.filter(pk=self.categoria_b.pk).exists())
 
 
+class AlcanceImplicitoTests(TestCase):
+    """El filtro automático del manager. Es implícito, así que se prueba explícito.
+
+    Sustituye a acordarse de filtrar en 81 consultas repartidas en 11 vistas.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.org_a = Organizacion.objects.create(slug='org_a', nombre='Org A')
+        cls.org_b = Organizacion.objects.create(slug='org_b', nombre='Org B')
+        cls.cat_a = Category.objects.create(name='De A', organizacion=cls.org_a)
+        cls.cat_b = Category.objects.create(name='De B', organizacion=cls.org_b)
+        cls.huerfana = Category.objects.create(name='Sin dueño')
+
+        cls.user_a = User.objects.create_user(
+            username='ana', password='x', tenant='org_a', organizacion=cls.org_a,
+        )
+        cls.soporte = User.objects.create_superuser(username='root', password='x')
+
+    def test_fuera_de_request_no_filtra(self):
+        """Comandos, migraciones y shell siguen viendo todo, como antes."""
+        from users.scoping import FUERA_DE_REQUEST, alcance_actual
+
+        self.assertIs(alcance_actual(), FUERA_DE_REQUEST)
+        self.assertEqual(Category.objects.count(), 3)
+
+    def test_dentro_de_un_alcance_solo_se_ve_esa_organizacion(self):
+        from users.scoping import alcance
+
+        with alcance(self.org_a):
+            nombres = set(Category.objects.values_list('name', flat=True))
+        self.assertEqual(nombres, {'De A'})
+
+    def test_el_alcance_se_restaura_al_salir(self):
+        """Un contextvar que quedara fijado contaminaría la siguiente operación."""
+        from users.scoping import FUERA_DE_REQUEST, alcance, alcance_actual
+
+        with alcance(self.org_a):
+            pass
+        self.assertIs(alcance_actual(), FUERA_DE_REQUEST)
+        self.assertEqual(Category.objects.count(), 3)
+
+    def test_alcance_none_no_devuelve_nada(self):
+        """Usuario sin organización o anónimo: cero filas, no la tabla entera."""
+        from users.scoping import alcance
+
+        with alcance(None):
+            self.assertEqual(Category.objects.count(), 0)
+
+    def test_el_superusuario_no_filtra(self):
+        from users.scoping import TODAS, alcance
+
+        with alcance(TODAS):
+            self.assertEqual(Category.objects.count(), 3)
+
+    def test_una_fila_sin_organizacion_no_aparece_dentro_de_ningun_alcance(self):
+        from users.scoping import alcance
+
+        for organizacion in (self.org_a, self.org_b):
+            with alcance(organizacion):
+                self.assertNotIn(
+                    'Sin dueño', set(Category.objects.values_list('name', flat=True))
+                )
+
+    def test_el_manager_todos_nunca_filtra(self):
+        """`todos` es el base_manager: si filtrara, resolver una FK podría reventar
+        a mitad de un request con un DoesNotExist sobre una fila que sí existe."""
+        from users.scoping import alcance
+
+        with alcance(self.org_a):
+            self.assertEqual(Category.todos.count(), 3)
+
+    def test_el_middleware_fija_el_alcance_segun_el_usuario(self):
+        """Prueba de extremo a extremo: mismo request, distinta organización."""
+        from users.scoping import alcance_de
+
+        self.assertEqual(alcance_de(self.user_a), self.org_a)
+
+        from django.contrib.auth.models import AnonymousUser
+        self.assertIsNone(alcance_de(AnonymousUser()))
+
+        from users.scoping import TODAS
+        self.assertIs(alcance_de(self.soporte), TODAS)
+
+    def test_crear_dentro_de_un_alcance_asigna_la_organizacion(self):
+        """Sin esto, una vista que crea produce una fila que el propio filtro
+        vuelve invisible: ni siquiera la ve quien acaba de crearla."""
+        from users.scoping import alcance
+
+        with alcance(self.org_b):
+            nueva = Category.objects.create(name='Creada en B')
+
+        self.assertEqual(nueva.organizacion, self.org_b)
+
+        with alcance(self.org_b):
+            self.assertIn('Creada en B', set(Category.objects.values_list('name', flat=True)))
+        with alcance(self.org_a):
+            self.assertNotIn('Creada en B', set(Category.objects.values_list('name', flat=True)))
+
+    def test_crear_con_organizacion_explicita_gana_sobre_el_alcance(self):
+        from users.scoping import alcance
+
+        with alcance(self.org_a):
+            nueva = Category.objects.create(name='Explícita', organizacion=self.org_b)
+        self.assertEqual(nueva.organizacion, self.org_b)
+
+    def test_crear_fuera_de_request_no_inventa_organizacion(self):
+        """Comandos y migraciones deciden ellos: no se les asigna nada por detrás."""
+        nueva = Category.objects.create(name='De comando')
+        self.assertIsNone(nueva.organizacion)
+
+    def test_guardar_una_fila_existente_no_le_cambia_la_organizacion(self):
+        from users.scoping import alcance
+
+        with alcance(self.org_b):
+            self.cat_a.name = 'De A renombrada'
+            self.cat_a.save()
+
+        self.cat_a.refresh_from_db()
+        self.assertEqual(self.cat_a.organizacion, self.org_a)
+
+    def test_el_alcance_no_se_filtra_entre_requests(self):
+        """El middleware restaura en `finally`; si no, el segundo request heredaría
+        el alcance del primero en el mismo worker."""
+        from users.scoping import FUERA_DE_REQUEST, alcance_actual
+
+        self.client.force_login(self.user_a)
+        self.client.get('/')
+        self.assertIs(alcance_actual(), FUERA_DE_REQUEST)
+
+
 class CoberturaDelAislamientoTests(TestCase):
     """Meta-test: que no se agregue un modelo de negocio sin aislar.
 

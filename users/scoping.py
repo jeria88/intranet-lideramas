@@ -10,7 +10,70 @@ Qué modelos lo heredan: solo la **raíz de cada agregado**. Los hijos (una
 `ChatConversation`) no llevan el campo — se filtran por su padre. Duplicar la
 FK en cada hijo es denormalización que se desincroniza sola.
 """
+import contextvars
+
 from django.db import models
+
+# ── Alcance activo ───────────────────────────────────────────────────────────
+# Tocar el `filter()` de 81 consultas repartidas en 11 vistas y confiar en que
+# nadie olvide la 82 no es aislamiento: es disciplina. El filtro se aplica en el
+# manager y el request dice a qué organización pertenece.
+#
+# Tres estados posibles:
+#   FUERA_DE_REQUEST (default) → no filtra. Comandos, migraciones, shell, tests
+#                                que no simulan un request. Es el comportamiento
+#                                histórico y por eso nada de eso se rompe.
+#   TODAS                      → no filtra. Superusuario (soporte del producto).
+#   Organizacion | None        → filtra a esa; `None` no devuelve nada.
+
+FUERA_DE_REQUEST = object()
+TODAS = object()
+
+_alcance = contextvars.ContextVar('alcance_organizacion', default=FUERA_DE_REQUEST)
+
+
+def fijar_alcance(valor):
+    """Fija el alcance activo. Devuelve el token para restaurarlo."""
+    return _alcance.set(valor)
+
+
+def restaurar_alcance(token):
+    _alcance.reset(token)
+
+
+def alcance_actual():
+    return _alcance.get()
+
+
+def alcance_de(user):
+    """Traduce un usuario al alcance que le corresponde."""
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return None
+    if user.is_superuser:
+        return TODAS
+    return getattr(user, 'organizacion', None)
+
+
+class alcance(object):
+    """Context manager para acotar un bloque a una organización.
+
+        with alcance(mi_org):
+            Prueba.objects.count()   # solo las de mi_org
+
+    Útil en comandos y tareas de fondo, donde no hay request que lo fije.
+    """
+
+    def __init__(self, valor):
+        self.valor = valor
+        self.token = None
+
+    def __enter__(self):
+        self.token = fijar_alcance(self.valor)
+        return self
+
+    def __exit__(self, *exc):
+        restaurar_alcance(self.token)
+        return False
 
 
 class OrganizacionQuerySet(models.QuerySet):
@@ -39,6 +102,23 @@ class OrganizacionQuerySet(models.QuerySet):
         if user.is_superuser:
             return self
         return self.de_organizacion(getattr(user, 'organizacion', None))
+
+
+class OrganizacionManager(models.Manager.from_queryset(OrganizacionQuerySet)):
+    """Manager por defecto: aplica solo el alcance activo del request.
+
+    Fuera de un request no filtra, así que comandos, migraciones y el shell
+    siguen viendo todo — igual que antes de existir este manager.
+    """
+
+    def get_queryset(self):
+        consulta = super().get_queryset()
+        activo = alcance_actual()
+        if activo is FUERA_DE_REQUEST or activo is TODAS:
+            return consulta
+        if activo is None:
+            return consulta.none()
+        return consulta.filter(organizacion=activo)
 
 
 def nombre_establecimiento(codigo, organizacion_id=None):
@@ -100,7 +180,24 @@ class ModeloDeOrganizacion(models.Model):
         db_index=True,
     )
 
-    objects = OrganizacionQuerySet.as_manager()
+    # `objects` filtra por el alcance activo. `todos` no filtra nunca y es el
+    # `base_manager`: Django lo usa para resolver relaciones (`booking.room`,
+    # `pregunta.prueba_texto`), y si esas resoluciones filtraran, una FK válida
+    # podría levantar DoesNotExist a mitad de un request.
+    objects = OrganizacionManager()
+    todos = models.Manager()
 
     class Meta:
         abstract = True
+        base_manager_name = 'todos'
+
+    def save(self, *args, **kwargs):
+        # Contrapartida obligatoria del filtro de lectura: sin esto, una vista que
+        # hace `Modelo.objects.create(...)` dentro de un request produce una fila
+        # sin organización — que el propio filtro vuelve invisible para todos,
+        # incluido quien acaba de crearla. Se asigna sola desde el alcance activo.
+        if self.organizacion_id is None:
+            activo = alcance_actual()
+            if activo not in (FUERA_DE_REQUEST, TODAS, None):
+                self.organizacion = activo
+        super().save(*args, **kwargs)

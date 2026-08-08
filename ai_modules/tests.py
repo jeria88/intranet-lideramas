@@ -84,18 +84,24 @@ class VistasDeAsistenteTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        from users.models import Organizacion
+
+        # Dentro de un request el manager filtra por la organización del usuario:
+        # un asistente sin organización no lo ve nadie, ni siquiera quien tiene el
+        # rol correcto. Por eso acá todo pertenece a la misma organización.
+        cls.org = Organizacion.objects.create(slug='colegio_demo', nombre='Colegio Demo')
         cls.asistente = AIAssistant.objects.create(
             slug='demo-utp-norte', name='UTP Sede Norte', profile_role='UTP',
             establishment='SEDE_NORTE', image_name='asistente-utp.jpg',
-            is_chat_enabled=True, is_active=True,
+            is_chat_enabled=True, is_active=True, organizacion=cls.org,
         )
         cls.ajeno = User.objects.create_user(
             username='ajeno', password='clave', tenant='colegio_demo',
-            role='DIRECTOR', establishment='SEDE_SUR',
+            role='DIRECTOR', establishment='SEDE_SUR', organizacion=cls.org,
         )
         cls.propio = User.objects.create_user(
             username='propio', password='clave', tenant='colegio_demo',
-            role='UTP', establishment='SEDE_NORTE',
+            role='UTP', establishment='SEDE_NORTE', organizacion=cls.org,
         )
 
     def test_anonimo_es_redirigido_al_login(self):
@@ -119,6 +125,32 @@ class VistasDeAsistenteTests(TestCase):
         self.asistente.save(update_fields=['is_active'])
         self.client.force_login(self.propio)
         resp = self.client.get(reverse('ai_modules:conversation_list', args=[self.asistente.slug]))
+        self.assertEqual(resp.status_code, 404)
+
+    def test_un_asistente_de_otra_organizacion_no_existe_para_este_usuario(self):
+        """Sin tocar la vista: el manager filtra por el alcance del request, así que
+        el asistente del vecino ni siquiera se encuentra."""
+        from users.models import Organizacion
+
+        otra = Organizacion.objects.create(slug='colegio_vecino', nombre='Colegio Vecino')
+        ajeno = AIAssistant.objects.create(
+            slug='vecino-utp-sede', name='UTP del vecino', profile_role='UTP',
+            establishment='SEDE_NORTE', image_name='x.jpg',
+            is_chat_enabled=True, is_active=True, organizacion=otra,
+        )
+
+        self.client.force_login(self.propio)
+        resp = self.client.get(reverse('ai_modules:conversation_list', args=[ajeno.slug]))
+        self.assertEqual(resp.status_code, 404)
+
+    def test_un_asistente_sin_organizacion_no_es_visible_en_la_vista(self):
+        huerfano = AIAssistant.objects.create(
+            slug='huerfano', name='Huérfano', profile_role='UTP',
+            establishment='SEDE_NORTE', image_name='x.jpg',
+            is_chat_enabled=True, is_active=True,
+        )
+        self.client.force_login(self.propio)
+        resp = self.client.get(reverse('ai_modules:conversation_list', args=[huerfano.slug]))
         self.assertEqual(resp.status_code, 404)
 
 
