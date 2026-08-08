@@ -71,7 +71,18 @@
       </div>
       <div class="field">
         <label>Establecimiento *</label>
-        <input type="text" name="establecimiento" required placeholder="Nombre del colegio">
+        {% if sedes %}
+          {# Elegir de la lista evita que "temuco", "TEMUCO" y "Temuco " terminen
+             contados como tres colegios distintos en el reporte. #}
+          <select name="establecimiento" required>
+            <option value="">Selecciona tu establecimiento…</option>
+            {% for codigo, nombre in sedes %}
+              <option value="{{ codigo }}">{{ nombre }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <input type="text" name="establecimiento" required placeholder="Nombre del colegio">
+        {% endif %}
       </div>
       <div class="field">
         <label>RBD <span style="font-weight:400; color:#aaa;">(opcional)</span></label>

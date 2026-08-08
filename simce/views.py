@@ -650,11 +650,46 @@ def prueba_identificacion(request, pk, modo='simce'):
                 prueba=prueba, nombre=nombre, rut=rut,
                 curso=curso, letra_curso=letra,
                 establecimiento=estab, rbd=rbd, modo=modo,
+                sede=_resolver_sede(prueba, estab),
             )
             return redirect('simce:prueba_rendir', sesion_pk=sesion.pk)
 
-    ctx = {'prueba': prueba, 'cursos': CURSO_CHOICES, 'modo': modo}
+    ctx = {
+        'prueba': prueba,
+        'cursos': CURSO_CHOICES,
+        'modo': modo,
+        'sedes': _sedes_de_la_prueba(prueba),
+    }
     return render(request, 'simce/prueba_identificacion.html', ctx)
+
+
+def _sedes_de_la_prueba(prueba):
+    """Sedes entre las que puede elegir quien rinde: las de la organización dueña."""
+    from users.models import Establecimiento
+
+    if not prueba.organizacion_id:
+        return []
+    return list(
+        Establecimiento.objects
+        .filter(organizacion_id=prueba.organizacion_id, activo=True)
+        .values_list('codigo', 'nombre')
+    )
+
+
+def _resolver_sede(prueba, declarado):
+    """Traduce lo que escribió el estudiante a una sede real, si coincide.
+
+    Nunca inventa: si no hay coincidencia queda `None` y el reporte lo agrupa
+    aparte, en vez de asignarle un colegio que el estudiante no dijo.
+    """
+    from users.models import Establecimiento
+
+    if not (prueba.organizacion_id and declarado):
+        return None
+    return Establecimiento.objects.filter(
+        organizacion_id=prueba.organizacion_id,
+        codigo=declarado.strip().upper(),
+    ).first()
 
 
 # ── Estudiante: Rendir prueba ─────────────────────────────────────

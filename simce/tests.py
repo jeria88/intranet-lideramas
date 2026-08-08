@@ -219,6 +219,51 @@ class RendicionPublicaTests(TestCase):
             self.client.get(reverse('simce:prueba_resultado', args=[sesion.pk])).status_code, 200
         )
 
+    def test_el_formulario_ofrece_las_sedes_de_la_organizacion_de_la_prueba(self):
+        from django.urls import reverse
+
+        from users.models import Establecimiento, Organizacion
+
+        Establecimiento.objects.create(organizacion=self.org, codigo='NORTE', nombre='Sede Norte')
+        otra_org = Organizacion.objects.create(slug='colegio_y', nombre='Colegio Y')
+        Establecimiento.objects.create(organizacion=otra_org, codigo='AJENA', nombre='Sede Ajena')
+
+        resp = self.client.get(
+            reverse('simce:prueba_identificacion', args=[self.prueba.pk, 'simce'])
+        )
+        sedes = dict(resp.context['sedes'])
+        self.assertIn('NORTE', sedes)
+        self.assertNotIn('AJENA', sedes, 'ofrece sedes de otra organización')
+
+    def test_lo_declarado_se_resuelve_a_una_sede_real(self):
+        from django.urls import reverse
+
+        from users.models import Establecimiento
+
+        norte = Establecimiento.objects.create(
+            organizacion=self.org, codigo='NORTE', nombre='Sede Norte',
+        )
+        self.client.post(
+            reverse('simce:prueba_identificacion', args=[self.prueba.pk, 'simce']),
+            {'nombre': 'Ana', 'rut': '11111111-1', 'curso': '4B',
+             'letra': 'A', 'establecimiento': 'norte', 'rbd': ''},
+        )
+        sesion = SesionEstudiante.objects.get()
+        self.assertEqual(sesion.sede, norte, 'no resolvió pese a diferir solo en mayúsculas')
+        self.assertEqual(sesion.establecimiento, 'norte', 'se pierde lo que declaró el estudiante')
+
+    def test_lo_declarado_que_no_coincide_no_inventa_sede(self):
+        from django.urls import reverse
+
+        self.client.post(
+            reverse('simce:prueba_identificacion', args=[self.prueba.pk, 'simce']),
+            {'nombre': 'Ana', 'rut': '11111111-1', 'curso': '4B',
+             'letra': 'A', 'establecimiento': 'Colegio Que No Existe', 'rbd': ''},
+        )
+        sesion = SesionEstudiante.objects.get()
+        self.assertIsNone(sesion.sede)
+        self.assertEqual(sesion.establecimiento, 'Colegio Que No Existe')
+
     def test_una_prueba_no_publicada_sigue_sin_ser_accesible(self):
         """Quitar el filtro por organización no puede abrir lo que no está publicado."""
         from django.urls import reverse

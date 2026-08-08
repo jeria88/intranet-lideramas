@@ -304,8 +304,16 @@ class SesionEstudiante(models.Model):
     prueba          = models.ForeignKey(Prueba, on_delete=models.CASCADE, related_name='sesiones')
     nombre          = models.CharField(max_length=150)
     rut             = models.CharField(max_length=12)
-    establecimiento = models.CharField(max_length=20)
+    # Texto libre que escribe el estudiante — se conserva tal cual como
+    # declaración suya. `sede` es el dato confiable para los reportes: se resuelve
+    # contra los establecimientos de la organización dueña de la prueba, así que
+    # "temuco", "TEMUCO" y "Temuco " dejan de ser tres colegios distintos.
+    establecimiento = models.CharField(max_length=20, verbose_name='Establecimiento (declarado)')
     rbd             = models.CharField(max_length=10, blank=True)
+    sede            = models.ForeignKey(
+        'users.Establecimiento', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='sesiones_simce', verbose_name='Establecimiento',
+    )
     curso           = models.CharField(max_length=3, choices=CURSO_CHOICES)
     letra_curso     = models.CharField(max_length=1, choices=LETRA_CHOICES)
     modo            = models.CharField(max_length=8, choices=MODO_SESION, default='simce')
