@@ -17,6 +17,7 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from ai_modules.models import AIAssistant
+from ai_modules.motores import MOTOR_POR_DEFECTO
 from ai_modules.plantillas_roles import ROLE_CONFIGS, _REGLA_URGENCIA
 from users.models import Establecimiento, Organizacion
 
@@ -104,6 +105,7 @@ class Command(BaseCommand):
                         'is_chat_enabled': True,
                         'description': f"Asistente IA para {cfg['label']} de {sede.nombre}.",
                         'system_instruction': prompt,
+                        'motor': MOTOR_POR_DEFECTO,
                     },
                 )
                 if nuevo:
@@ -125,6 +127,7 @@ class Command(BaseCommand):
                     'profile_role': 'RED',
                     'establishment': EQUIPO_CENTRAL_CODIGO,
                     'image_name': 'red_avatar.png',
+                    'motor': MOTOR_POR_DEFECTO,
                     'is_chat_enabled': True,
                     'description': f'Coordinación estratégica de {organizacion.nombre}.',
                     'system_instruction': _prompt_equipo_central(organizacion.nombre, len(sedes)),

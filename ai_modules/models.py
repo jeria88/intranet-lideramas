@@ -6,8 +6,20 @@ from users.scoping import ModeloDeOrganizacion
 
 
 class AIAssistant(ModeloDeOrganizacion):
+    MOTOR_CHOICES = [
+        ('v3', 'v3 — dos etapas con citas verificadas (recomendado)'),
+        ('v2', 'v2 — prompt por rol + protocolos por palabra clave'),
+        ('v1', 'v1 — RAG directo con postfiltrado de citas'),
+    ]
+
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=100)
+    # Qué motor responde. Antes se decidía por el sufijo del slug ('-v2', '-v3'),
+    # acoplando el comportamiento al nombre: al prefijar los slugs por organización
+    # ningún asistente terminaba en '-v3' y todos caían al motor v1 sin aviso.
+    motor = models.CharField(
+        max_length=2, choices=MOTOR_CHOICES, default='v3', verbose_name='Motor de respuesta',
+    )
     profile_role = models.CharField(max_length=20, verbose_name='Rol objetivo')
     description = models.TextField(blank=True)
     use_cases = models.TextField(blank=True, verbose_name='Casos de uso (uno por línea)')

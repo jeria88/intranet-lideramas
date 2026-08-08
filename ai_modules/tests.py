@@ -154,6 +154,67 @@ class VistasDeAsistenteTests(TestCase):
         self.assertEqual(resp.status_code, 404)
 
 
+class DespachoDeMotorTests(TestCase):
+    """Qué motor responde. Antes se decidía por el sufijo del slug.
+
+    Ese acoplamiento al nombre se rompió solo: al prefijar los slugs por
+    organización (`<org>-<rol>-<sede>`) ningún asistente termina en `-v3`, así
+    que todos habrían pasado a responder con v1 sin que nada lo avisara.
+    """
+
+    def _asistente(self, **extra):
+        datos = dict(
+            slug='demo-utp-sede', name='UTP', profile_role='UTP',
+            establishment='SEDE', image_name='x.jpg',
+        )
+        datos.update(extra)
+        return AIAssistant.objects.create(**datos)
+
+    def test_el_motor_por_defecto_es_v3(self):
+        """v3 es el único con pipeline de citas verificadas, que es lo que ataca
+        la alucinación de artículos normativos."""
+        self.assertEqual(self._asistente().motor, 'v3')
+
+    def test_despacha_al_motor_configurado(self):
+        from unittest.mock import patch
+
+        from ai_modules.motores import responder
+
+        for motor, objetivo in (
+            ('v1', 'ai_modules.motores.call_deepseek_ai'),
+            ('v2', 'ai_modules.motores.call_ai_v2'),
+            ('v3', 'ai_modules.motores.call_ai_v3'),
+        ):
+            with self.subTest(motor=motor):
+                asistente = self._asistente(slug=f'demo-{motor}', motor=motor)
+                with patch(objetivo, return_value=f'respuesta {motor}') as llamado:
+                    salida = responder(asistente, [], 'hola')
+                llamado.assert_called_once()
+                self.assertEqual(salida, f'respuesta {motor}')
+
+    def test_el_sufijo_del_slug_ya_no_decide(self):
+        """Un slug que termina en '-v2' con motor v3 responde con v3."""
+        from unittest.mock import patch
+
+        from ai_modules.motores import responder
+
+        asistente = self._asistente(slug='demo-utp-v2', motor='v3')
+        with patch('ai_modules.motores.call_ai_v3', return_value='v3') as v3:
+            responder(asistente, [], 'hola')
+        v3.assert_called_once()
+
+    def test_un_motor_desconocido_cae_al_por_defecto(self):
+        """Un valor raro en la BD no puede dejar al usuario sin respuesta."""
+        from unittest.mock import patch
+
+        from ai_modules.motores import responder
+
+        asistente = self._asistente(motor='v9')
+        with patch('ai_modules.motores.call_ai_v3', return_value='ok') as v3:
+            self.assertEqual(responder(asistente, [], 'hola'), 'ok')
+        v3.assert_called_once()
+
+
 class SlugDeAsistenteTests(TestCase):
     """El slug ya NO codifica el alcance del RAG.
 
