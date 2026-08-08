@@ -318,17 +318,23 @@ def get_relevant_chunks(assistant, query, top_n=10):
     from django.db.models import Q
     
     if not is_global:
-        # Extraer rol y establecimiento del slug (ej: utp-temuco)
-        slug_parts = assistant.slug.split('-')
-        rol_obj = slug_parts[0]
-        est_obj = slug_parts[1] if len(slug_parts) > 1 else 'temuco'
-        
-        # El filtro recupera: Nacional + Institucional (del establecimiento) + Rol (del establecimiento)
-        filter_q = Q(metadata__nivel__in=['nacional', 'congregacional']) | \
-                   (Q(metadata__establecimiento=est_obj) & Q(metadata__nivel='institucional')) | \
-                   (Q(metadata__establecimiento=est_obj) & Q(metadata__rol=rol_obj))
+        # Rol y establecimiento salen de los CAMPOS del asistente, no de parsear su
+        # slug. Antes se hacía `slug.split('-')` con `else 'temuco'` de reserva: un
+        # default global cuyo valor era el establecimiento de UN cliente, así que
+        # cualquier asistente sin sufijo heredaba la base normativa de ese colegio.
+        # Con el slug ahora prefijado por organización (`<org>-<rol>-<sede>`), el
+        # parseo posicional además devolvía la organización como si fuera el rol.
+        rol_obj = (assistant.profile_role or '').lower()
+        est_obj = (assistant.establishment or '').lower()
+
+        # Nacional siempre; lo institucional y lo de rol, solo del propio establecimiento.
+        filter_q = Q(metadata__nivel__in=['nacional', 'organizacional'])
+        if est_obj:
+            filter_q |= (Q(metadata__establecimiento=est_obj) & Q(metadata__nivel='institucional'))
+            if rol_obj:
+                filter_q |= (Q(metadata__establecimiento=est_obj) & Q(metadata__rol=rol_obj))
     else:
-        # Global ve TODO (Requerimiento piloto: Todos los directores ven toda la base de Temuco/Nacional)
+        # Los asistentes marcados como globales ven toda la base.
         filter_q = Q()
 
     # Conteo para trigger de caché

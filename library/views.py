@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 from django.db.models import Q
 from .models import Document, Category
 from users.models import User
+from users.scoping import establecimientos_de
 
 
 @login_required
@@ -36,7 +37,7 @@ def document_list(request):
     return render(request, 'library/document_list.html', {
         'documents': docs,
         'categories': categories,
-        'establishments': User.ESTABLISHMENT_CHOICES,
+        'establishments': establecimientos_de(request.user),
         'roles': User.ROLE_CHOICES,
         'query': q, 
         'selected_category': cat, 

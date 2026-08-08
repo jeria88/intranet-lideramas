@@ -1,5 +1,5 @@
 """
-Django settings — Intranet Congregacional
+Django settings — LíderA+
 Stack: Railway.app · Django 6.0.2 · PostgreSQL · WhiteNoise · Gunicorn
 """
 
@@ -45,7 +45,7 @@ INSTALLED_APPS = [
 AI_QUERY_SLA_HOURS = 24
 
 # ── Daily.co ─────────────────────────────────────────────────────────────
-DAILY_BASE_URL = os.environ.get('DAILY_BASE_URL', 'https://intranet-sfa.daily.co/')
+DAILY_BASE_URL = os.environ.get('DAILY_BASE_URL', '')
 DAILY_API_KEY = os.environ.get('DAILY_API_KEY')
 
 # ── DeepSeek ─────────────────────────────────────────────────────────────

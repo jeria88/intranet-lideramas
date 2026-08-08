@@ -10,7 +10,7 @@ urlpatterns = [
     # Acceso genérico (para bookmarks rotos o @login_required redirects)
     path('acceso/', user_views.acceso, name='acceso'),
 
-    # Login/logout por tenant: /sfa/login/, /colegio_x/login/, etc.
+    # Login/logout por organización: /<slug>/login/
     # IMPORTANTE: va antes de los includes para que <str:tenant>/ no capture rutas del sistema
     path('<str:tenant>/login/', user_views.tenant_login, name='tenant-login'),
     path('<str:tenant>/logout/', user_views.tenant_logout, name='tenant-logout'),

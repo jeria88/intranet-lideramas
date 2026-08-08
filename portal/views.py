@@ -6,6 +6,7 @@ from datetime import timedelta
 from users.models import User
 from .models import Circular, UserActivity
 from notifications.models import Notification
+from users.scoping import establecimientos_de
 
 
 ROLE_LABELS = dict(User.ROLE_CHOICES)
@@ -65,7 +66,7 @@ def circular_crear(request):
             return redirect('portal:index')
     return render(request, 'portal/circular_form.html', {
         'roles': User.ROLE_CHOICES,
-        'establishments': User.ESTABLISHMENT_CHOICES,
+        'establishments': establecimientos_de(request.user),
     })
 
 

@@ -26,25 +26,25 @@ class ControlDeAccesoAAsistentesTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.utp_temuco = User.objects.create_user(
-            username='utp_temuco', password='x', tenant='sfa',
-            role='UTP', establishment='TEMUCO',
+            username='utp_norte', password='x', tenant='colegio_demo',
+            role='UTP', establishment='SEDE_NORTE',
         )
         cls.utp_angol = User.objects.create_user(
-            username='utp_angol', password='x', tenant='sfa',
-            role='UTP', establishment='ANGOL',
+            username='utp_sur', password='x', tenant='colegio_demo',
+            role='UTP', establishment='SEDE_SUR',
         )
         cls.director_temuco = User.objects.create_user(
-            username='dir_temuco', password='x', tenant='sfa',
-            role='DIRECTOR', establishment='TEMUCO',
+            username='dir_norte', password='x', tenant='colegio_demo',
+            role='DIRECTOR', establishment='SEDE_NORTE',
         )
         cls.soporte = User.objects.create_user(
-            username='soporte', password='x', tenant='sfa',
-            role='INSPECTOR', establishment='ANGOL', is_staff=True,
+            username='soporte', password='x', tenant='colegio_demo',
+            role='INSPECTOR', establishment='SEDE_SUR', is_staff=True,
         )
 
         cls.asistente_utp_temuco = AIAssistant.objects.create(
-            slug='utp-temuco', name='UTP Temuco', profile_role='UTP',
-            establishment='TEMUCO', image_name='asistente-utp.jpg',
+            slug='demo-utp-norte', name='UTP Sede Norte', profile_role='UTP',
+            establishment='SEDE_NORTE', image_name='asistente-utp.jpg',
         )
         cls.asistente_transversal = AIAssistant.objects.create(
             slug='red', name='Asistente RED', profile_role='UTP',
@@ -85,17 +85,17 @@ class VistasDeAsistenteTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.asistente = AIAssistant.objects.create(
-            slug='utp-temuco', name='UTP Temuco', profile_role='UTP',
-            establishment='TEMUCO', image_name='asistente-utp.jpg',
+            slug='demo-utp-norte', name='UTP Sede Norte', profile_role='UTP',
+            establishment='SEDE_NORTE', image_name='asistente-utp.jpg',
             is_chat_enabled=True, is_active=True,
         )
         cls.ajeno = User.objects.create_user(
-            username='ajeno', password='clave', tenant='sfa',
-            role='DIRECTOR', establishment='ANGOL',
+            username='ajeno', password='clave', tenant='colegio_demo',
+            role='DIRECTOR', establishment='SEDE_SUR',
         )
         cls.propio = User.objects.create_user(
-            username='propio', password='clave', tenant='sfa',
-            role='UTP', establishment='TEMUCO',
+            username='propio', password='clave', tenant='colegio_demo',
+            role='UTP', establishment='SEDE_NORTE',
         )
 
     def test_anonimo_es_redirigido_al_login(self):
@@ -123,39 +123,49 @@ class VistasDeAsistenteTests(TestCase):
 
 
 class SlugDeAsistenteTests(TestCase):
-    """El slug `rol-establecimiento` es la convención de la que hoy cuelga el RAG.
+    """El slug ya NO codifica el alcance del RAG.
 
-    `ai_modules/utils.py` parsea `slug.split('-')` para filtrar chunks por rol y
-    establecimiento. Es acoplamiento por convención de nombre, y el refactor lo
-    va a reemplazar por FKs — este test documenta el contrato vigente.
+    Antes `ai_modules/utils.py` hacía `slug.split('-')` para sacar rol y
+    establecimiento, con `else 'temuco'` de reserva — un default global cuyo valor
+    era el establecimiento de un cliente concreto. Ahora el slug lleva prefijo de
+    organización (`<org>-<rol>-<sede>`) y el alcance sale de los campos.
     """
 
-    def test_el_slug_codifica_rol_y_establecimiento(self):
+    def test_el_alcance_del_rag_sale_de_los_campos_no_del_slug(self):
         asistente = AIAssistant.objects.create(
-            slug='inspector-lautaro', name='Inspector Lautaro',
-            profile_role='INSPECTOR', establishment='LAUTARO',
+            slug='colegio-andes-inspector-sede_norte', name='Inspector Sede Norte',
+            profile_role='INSPECTOR', establishment='SEDE_NORTE',
             image_name='asistente-inspector.jpg',
         )
-        rol, establecimiento = asistente.slug.split('-')[:2]
-        self.assertEqual(rol.upper(), asistente.profile_role)
-        self.assertEqual(establecimiento.upper(), asistente.establishment)
+        # Parsear el slug por posición daría 'colegio' como rol: por eso ya no se hace.
+        self.assertNotEqual(asistente.slug.split('-')[0].upper(), asistente.profile_role)
+        self.assertEqual(asistente.profile_role, 'INSPECTOR')
+        self.assertEqual(asistente.establishment, 'SEDE_NORTE')
+
+    def test_un_asistente_sin_establecimiento_no_hereda_el_de_otro_cliente(self):
+        """La regresión concreta: el default `'temuco'` que había en utils.py."""
+        asistente = AIAssistant.objects.create(
+            slug='transversal', name='Transversal', profile_role='UTP',
+            establishment='', image_name='x.jpg',
+        )
+        self.assertEqual(asistente.establishment, '')
 
     def test_el_slug_es_unico(self):
         AIAssistant.objects.create(
-            slug='utp-temuco', name='A', profile_role='UTP',
-            establishment='TEMUCO', image_name='x.jpg',
+            slug='demo-utp-norte', name='A', profile_role='UTP',
+            establishment='SEDE_NORTE', image_name='x.jpg',
         )
         from django.db import IntegrityError, transaction
         with self.assertRaises(IntegrityError), transaction.atomic():
             AIAssistant.objects.create(
-                slug='utp-temuco', name='B', profile_role='UTP',
-                establishment='TEMUCO', image_name='x.jpg',
+                slug='demo-utp-norte', name='B', profile_role='UTP',
+                establishment='SEDE_NORTE', image_name='x.jpg',
             )
 
     def test_use_cases_se_parsea_por_lineas_ignorando_vacias(self):
         asistente = AIAssistant.objects.create(
             slug='utp-angol', name='UTP', profile_role='UTP',
-            establishment='ANGOL', image_name='x.jpg',
+            establishment='SEDE_SUR', image_name='x.jpg',
             use_cases='  Caso uno  \n\n Caso dos \n   \n',
         )
         self.assertEqual(asistente.get_use_cases_list(), ['Caso uno', 'Caso dos'])

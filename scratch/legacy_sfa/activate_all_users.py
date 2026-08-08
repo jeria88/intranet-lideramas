@@ -25,8 +25,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--tenant', default='sfa',
-            help='Slug del proyecto (default: sfa)',
+            '--tenant', required=True,
+            help='Slug de la organización cuyos usuarios se activan.',
         )
 
     def handle(self, *args, **options):

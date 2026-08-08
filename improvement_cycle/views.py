@@ -7,6 +7,7 @@ from django.db.models import Count
 from django.contrib import messages
 from .utils import generate_cycle_content_ai
 from meetings.models import MeetingRoom, MeetingBooking
+from users.scoping import establecimientos_de
 
 
 @login_required
@@ -95,7 +96,7 @@ def meta_crear(request):
 
 
     return render(request, 'improvement_cycle/meta_form.html', {
-        'establishments': User.ESTABLISHMENT_CHOICES,
+        'establishments': establecimientos_de(request.user),
         'roles': User.ROLE_CHOICES,
         'ee_initial': ee_initial,
         'initial_title': request.GET.get('title', ''),

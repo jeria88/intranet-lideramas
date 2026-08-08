@@ -41,6 +41,47 @@ class OrganizacionQuerySet(models.QuerySet):
         return self.de_organizacion(getattr(user, 'organizacion', None))
 
 
+def nombre_establecimiento(codigo, organizacion_id=None):
+    """Nombre visible de una sede a partir de su código.
+
+    Reemplaza a los diccionarios `ESTABLISHMENT_NAMES` que estaban copiados en
+    `ai_modules/v2/services.py` y `v3/services.py` con las 8 sedes de un cliente:
+    una organización nueva veía `.title()` del código en vez de su nombre real.
+    """
+    from users.models import Establecimiento
+
+    if not codigo:
+        return ''
+    consulta = Establecimiento.objects.filter(codigo=codigo.strip().upper())
+    if organizacion_id:
+        consulta = consulta.filter(organizacion_id=organizacion_id)
+    sede = consulta.first()
+    return sede.nombre if sede else codigo.replace('_', ' ').title()
+
+
+def establecimientos_de(user):
+    """Opciones de establecimiento para los formularios de este usuario.
+
+    Reemplaza a `User.ESTABLISHMENT_CHOICES`, que era un enum fijo con los 8
+    colegios de un cliente: cualquier organización nueva veía sedes ajenas en sus
+    desplegables y no veía las propias.
+
+    Devuelve pares `(codigo, nombre)` — misma forma que los `choices` de Django,
+    así que los templates que lo recorren no cambian.
+    """
+    from users.models import Establecimiento
+
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return []
+    if not getattr(user, 'organizacion_id', None):
+        return []
+    return list(
+        Establecimiento.objects
+        .filter(organizacion_id=user.organizacion_id, activo=True)
+        .values_list('codigo', 'nombre')
+    )
+
+
 class ModeloDeOrganizacion(models.Model):
     """Base de todo modelo cuyos datos pertenecen a una organización.
 

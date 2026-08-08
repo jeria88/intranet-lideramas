@@ -8,7 +8,7 @@ class CalendarEvent(ModeloDeOrganizacion):
         ('mineduc',          'Plazo MINEDUC'),
         ('supereduc',        'Superintendencia de Educación'),
         ('agencia',          'Agencia de Calidad'),
-        ('congregacional',   'Congregacional'),
+        ('organizacional',   'De la organización'),
         ('interno',          'Interno EE'),
         ('cultural',         'Cultural'),
         ('deportivo',        'Deportivo'),

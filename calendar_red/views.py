@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import CalendarEvent
 from users.models import User
+from users.scoping import establecimientos_de
 
 
 @login_required
@@ -67,7 +68,7 @@ def calendario(request):
         'grouped': grouped,
         'filter_ee': filter_ee,
         'filter_type': filter_type,
-        'establishments': user.ESTABLISHMENT_CHOICES,
+        'establishments': establecimientos_de(request.user),
         'event_types': CalendarEvent.EVENT_TYPE_CHOICES,
         'month_days': month_days,
         'current_month': month_int,
@@ -102,7 +103,7 @@ def evento_crear(request):
         return redirect('calendar_red:calendario')
     return render(request, 'calendar_red/evento_form.html', {
         'roles': User.ROLE_CHOICES,
-        'establishments': User.ESTABLISHMENT_CHOICES,
+        'establishments': establecimientos_de(request.user),
         'event_types': CalendarEvent.EVENT_TYPE_CHOICES,
         'initial_title': request.GET.get('title', ''),
         'initial_description': request.GET.get('description', ''),
@@ -126,7 +127,7 @@ def evento_editar(request, pk):
     return render(request, 'calendar_red/evento_form.html', {
         'event': event,
         'roles': User.ROLE_CHOICES,
-        'establishments': User.ESTABLISHMENT_CHOICES,
+        'establishments': establecimientos_de(request.user),
         'event_types': CalendarEvent.EVENT_TYPE_CHOICES,
     })
 

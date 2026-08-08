@@ -14,18 +14,9 @@ from ..utils import get_relevant_chunks
 from .prompts import ROLE_PROMPTS
 from .protocols import detectar_protocolo
 from .postprocess import filtrar_citas_no_rag
+from users.scoping import nombre_establecimiento
 
 
-ESTABLISHMENT_NAMES: dict[str, str] = {
-    'TEMUCO':   'Temuco',
-    'LAUTARO':  'Lautaro',
-    'RENAICO':  'Renaico',
-    'SANTIAGO': 'Santiago',
-    'IMPERIAL': 'Imperial',
-    'ERCILLA':  'Ercilla',
-    'ARAUCO':   'Arauco',
-    'ANGOL':    'Angol',
-}
 
 
 def _get_system_prompt(assistant) -> str:
@@ -35,7 +26,7 @@ def _get_system_prompt(assistant) -> str:
     if prompt_fn is None:
         return assistant.system_instruction or "Eres un asesor experto en normativa educacional chilena vigente."
     est_code = (assistant.establishment or '').upper()
-    est_name = ESTABLISHMENT_NAMES.get(est_code, est_code.title())
+    est_name = nombre_establecimiento(est_code, assistant.organizacion_id)
     return prompt_fn(est_name)
 
 

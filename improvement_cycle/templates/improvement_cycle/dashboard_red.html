@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard Red Congregacional | LiderA+{% endblock %}
+{% block title %}Dashboard de Red | LíderA+{% endblock %}
 {% block extra_css %}
 <style>
     .stats-row {
@@ -72,7 +72,7 @@
 {% endblock %}
 {% block content %}
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-    <h2 style="margin:0;">🌐 Dashboard Red Congregacional</h2>
+    <h2 style="margin:0;">🌐 Dashboard de Red</h2>
     {% if user.is_staff %}
     <a href="{% url 'improvement_cycle:meta_crear' %}"
         style="background:#1e73be;color:white;padding:10px 20px;border-radius:20px;text-decoration:none;font-size:14px;font-weight:600;">+

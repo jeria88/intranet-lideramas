@@ -11,6 +11,7 @@ from django.conf import settings
 import requests
 from .models import MeetingRoom, MeetingBooking, MeetingAttendance, MeetingDocument, MeetingAgreement, MeetingParticipant, GuestInvite
 from improvement_cycle.models import ImprovementGoal
+from users.scoping import establecimientos_de
 
 MONTHLY_QUOTA = 4  # Reuniones máximas por usuario por mes (salvo RED)
 
@@ -335,7 +336,7 @@ def recording_list(request):
 
     return render(request, 'meetings/recording_list.html', {
         'bookings': bookings,
-        'establishments': request.user.ESTABLISHMENT_CHOICES,
+        'establishments': establecimientos_de(request.user),
         'roles': request.user.ROLE_CHOICES,
     })
 

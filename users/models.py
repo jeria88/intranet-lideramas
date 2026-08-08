@@ -28,7 +28,7 @@ class Establecimiento(models.Model):
     """Una sede/colegio dentro de una organización.
 
     Reemplaza a `User.ESTABLISHMENT_CHOICES`, que estaba hardcodeado con los 8
-    colegios de la Red SFA y se reusaba como `choices` en
+    colegios de un solo cliente y se reusaba como `choices` en
     `improvement_cycle/models.py` y `library/models.py`. `codigo` conserva los
     valores del enum viejo (TEMUCO, ANGOL, …) para que la migración de datos sea
     directa y los registros existentes no queden huérfanos.
@@ -71,7 +71,10 @@ class User(AbstractUser):
         verbose_name='username',
         error_messages={'unique': 'Ya existe un usuario con ese nombre en este proyecto.'},
     )
-    tenant = models.CharField(max_length=50, default='sfa', verbose_name='Proyecto')
+    # Espejo de `organizacion.slug`. Sin default: el valor anterior era el slug de
+    # UN cliente, así que todo usuario creado sin especificar tenant aterrizaba en
+    # su organización. La fuente de verdad es la FK `organizacion`.
+    tenant = models.CharField(max_length=50, blank=True, default='', verbose_name='Organización (slug)')
 
     ROLE_CHOICES = [
         ('REPRESENTANTE', 'Representante Legal'),
@@ -81,20 +84,13 @@ class User(AbstractUser):
         ('CONVIVENCIA', 'Coordinador/a de Convivencia Educativa'),
         ('RED', 'Equipo Red'),
     ]
-    ESTABLISHMENT_CHOICES = [
-        ('TEMUCO', 'Temuco'),
-        ('LAUTARO', 'Lautaro'),
-        ('RENAICO', 'Renaico'),
-        ('SANTIAGO', 'Santiago'),
-        # FLORIDA fusionado con SANTIAGO
-        ('IMPERIAL', 'Imperial'),
-        ('ERCILLA', 'Ercilla'),
-        ('ARAUCO', 'Arauco'),
-        ('ANGOL', 'Angol'),
-        ('RED', 'Equipo Red Congregacional'),
-    ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='DIRECTOR', verbose_name='Cargo')
-    establishment = models.CharField(max_length=20, choices=ESTABLISHMENT_CHOICES, default='ANGOL', verbose_name='Establecimiento')
+    # Código de la sede. Sin `choices`: el catálogo de establecimientos es la tabla
+    # `Establecimiento`, no una lista en el código — antes era un enum fijo con los
+    # 8 colegios de un cliente, así que dar de alta a otro exigía tocar el modelo.
+    # Se conserva como espejo denormalizado de `establecimiento.codigo` mientras
+    # dura la transición; la fuente de verdad es la FK.
+    establishment = models.CharField(max_length=20, blank=True, default='', verbose_name='Establecimiento (código)')
 
     # ── Transición a multi-tenancy real ───────────────────────────────────────
     # Conviven con `tenant`/`establishment` mientras se migran las lecturas.

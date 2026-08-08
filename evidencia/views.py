@@ -19,13 +19,6 @@ def reuniones(request):
     })
 
 
-@login_required
-def reunion_presencial(request):
-    docs = EvidenceDocument.objects.filter(session_type='presencial').order_by('-session_date')
-    return render(request, 'evidencia/reunion_presencial.html', {'docs': docs})
-
-
-@login_required
-def reunion_virtual(request):
-    docs = EvidenceDocument.objects.filter(session_type='virtual').order_by('-session_date')
-    return render(request, 'evidencia/reunion_virtual.html', {'docs': docs})
+# `reunion_presencial` y `reunion_virtual` renderizaban dos actas de eventos de un
+# cliente concreto (contenido fijo en el template, imágenes en su dominio). Se
+# retiraron junto con su marca. `reuniones` ya lista los mismos documentos.

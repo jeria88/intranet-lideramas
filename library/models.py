@@ -21,7 +21,7 @@ class Document(ModeloDeOrganizacion):
     file = models.FileField(upload_to='documents/%Y/%m/%d/', verbose_name='Archivo')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='documents')
     establishment = models.CharField(
-        max_length=20, choices=User.ESTABLISHMENT_CHOICES, default='ANGOL', verbose_name='Establecimiento'
+        max_length=20, blank=True, default='', verbose_name='Establecimiento (código)'
     )
     description = models.TextField(verbose_name='Reseña/Descripción')
     author = models.ForeignKey(

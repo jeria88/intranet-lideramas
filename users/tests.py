@@ -59,7 +59,7 @@ class TenantAuthBackendTests(TestCase):
         self.assertEqual(authenticate(username='soporte', password='clave-staff'), staff)
 
     def test_usuario_inactivo_no_autentica(self):
-        """`archive_sfa_users` desactiva usuarios en cada deploy: debe cerrar el acceso."""
+        """Dar de baja a alguien debe cerrarle el acceso, no solo ocultarle la UI."""
         self.a.is_active = False
         self.a.save(update_fields=['is_active'])
         self.assertIsNone(authenticate(username='director', password='clave-a', tenant='colegio_a'))
@@ -82,9 +82,12 @@ class UnicidadPorTenantTests(TestCase):
         User.objects.create_user(username='utp', password='y', tenant='colegio_b')
         self.assertEqual(User.objects.filter(username='utp').count(), 2)
 
-    def test_tenant_por_defecto_es_sfa(self):
-        """Default histórico. Si el refactor lo cambia, este test debe cambiarse a conciencia."""
-        self.assertEqual(User.objects.create_user(username='x', password='y').tenant, 'sfa')
+    def test_un_usuario_sin_organizacion_no_cae_en_ninguna(self):
+        """Antes el default era el slug de un cliente concreto: todo usuario creado
+        sin especificar organización aterrizaba dentro de la suya."""
+        user = User.objects.create_user(username='x', password='y')
+        self.assertEqual(user.tenant, '')
+        self.assertIsNone(user.organizacion)
 
 
 class LoginPorPathTests(TestCase):
@@ -140,9 +143,9 @@ class MigracionAOrganizacionesTests(TestCase):
         self._migracion().despoblar(global_apps, None)
 
     def setUp(self):
-        User.objects.create_user(username='a1', password='x', tenant='sfa', establishment='TEMUCO')
-        User.objects.create_user(username='a2', password='x', tenant='sfa', establishment='TEMUCO')
-        User.objects.create_user(username='a3', password='x', tenant='sfa', establishment='ANGOL')
+        User.objects.create_user(username='a1', password='x', tenant='colegio_demo', establishment='TEMUCO')
+        User.objects.create_user(username='a2', password='x', tenant='colegio_demo', establishment='TEMUCO')
+        User.objects.create_user(username='a3', password='x', tenant='colegio_demo', establishment='ANGOL')
         User.objects.create_user(username='b1', password='x', tenant='colegio_b', establishment='SANTIAGO')
 
     def test_crea_una_organizacion_por_tenant(self):
@@ -155,21 +158,21 @@ class MigracionAOrganizacionesTests(TestCase):
         self._poblar()
         tenants = set(User.objects.values_list('tenant', flat=True))
         self.assertEqual(set(Organizacion.objects.values_list('slug', flat=True)), tenants)
-        self.assertIn('sfa', tenants)
+        self.assertIn('colegio_demo', tenants)
         self.assertIn('colegio_b', tenants)
 
     def test_crea_los_establecimientos_de_cada_organizacion_sin_mezclarlos(self):
         """Lo que importa no es cuántos hay, sino que ninguno cruce de organización."""
         self._poblar()
-        sfa = Organizacion.objects.get(slug='sfa')
+        demo = Organizacion.objects.get(slug='colegio_demo')
         otra = Organizacion.objects.get(slug='colegio_b')
 
-        codigos_sfa = set(sfa.establecimientos.values_list('codigo', flat=True))
+        codigos_demo = set(demo.establecimientos.values_list('codigo', flat=True))
         codigos_otra = set(otra.establecimientos.values_list('codigo', flat=True))
 
-        self.assertTrue({'ANGOL', 'TEMUCO'}.issubset(codigos_sfa))
+        self.assertTrue({'ANGOL', 'TEMUCO'}.issubset(codigos_demo))
         self.assertEqual(codigos_otra, {'SANTIAGO'})
-        self.assertEqual(codigos_sfa & codigos_otra, set(), 'un establecimiento cruzó de organización')
+        self.assertEqual(codigos_demo & codigos_otra, set(), 'un establecimiento cruzó de organización')
 
     def test_cada_establecimiento_corresponde_a_un_usuario_real_de_esa_organizacion(self):
         """No se inventan sedes: cada una sale de un `User.establishment` existente."""
@@ -182,10 +185,10 @@ class MigracionAOrganizacionesTests(TestCase):
 
     def test_asigna_las_fk_a_cada_usuario(self):
         self._poblar()
-        a1 = User.objects.get(username='a1', tenant='sfa')
+        a1 = User.objects.get(username='a1', tenant='colegio_demo')
         b1 = User.objects.get(username='b1', tenant='colegio_b')
 
-        self.assertEqual(a1.organizacion.slug, 'sfa')
+        self.assertEqual(a1.organizacion.slug, 'colegio_demo')
         self.assertEqual(a1.establecimiento.codigo, 'TEMUCO')
         self.assertEqual(b1.organizacion.slug, 'colegio_b')
         self.assertEqual(b1.establecimiento.codigo, 'SANTIAGO')
@@ -195,9 +198,9 @@ class MigracionAOrganizacionesTests(TestCase):
         self.assertEqual(User.objects.filter(organizacion__isnull=True).count(), 0)
 
     def test_el_equipo_red_queda_marcado_como_central(self):
-        User.objects.create_user(username='red1', password='x', tenant='sfa', establishment='RED')
+        User.objects.create_user(username='red1', password='x', tenant='colegio_demo', establishment='RED')
         self._poblar()
-        red = Establecimiento.objects.get(organizacion__slug='sfa', codigo='RED')
+        red = Establecimiento.objects.get(organizacion__slug='colegio_demo', codigo='RED')
         self.assertTrue(red.es_equipo_central)
         self.assertTrue(User.objects.get(username='red1').is_red_team)
 
@@ -234,14 +237,14 @@ class MigracionAOrganizacionesTests(TestCase):
         self.assertEqual(Establecimiento.objects.count(), 0)
         self.assertEqual(User.objects.filter(organizacion__isnull=False).count(), 0)
         # Los CharFields nunca se tocaron: el estado previo queda intacto.
-        self.assertEqual(User.objects.get(username='a1').tenant, 'sfa')
+        self.assertEqual(User.objects.get(username='a1').tenant, 'colegio_demo')
         self.assertEqual(User.objects.get(username='a1').establishment, 'TEMUCO')
 
     def test_usuario_sin_establecimiento_igual_recibe_organizacion(self):
-        User.objects.create_user(username='sin_est', password='x', tenant='sfa', establishment='')
+        User.objects.create_user(username='sin_est', password='x', tenant='colegio_demo', establishment='')
         self._poblar()
         user = User.objects.get(username='sin_est')
-        self.assertEqual(user.organizacion.slug, 'sfa')
+        self.assertEqual(user.organizacion.slug, 'colegio_demo')
         self.assertIsNone(user.establecimiento)
 
 

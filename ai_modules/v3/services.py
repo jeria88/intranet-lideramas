@@ -28,18 +28,9 @@ from ..v2.protocols import detectar_protocolo
 from ..v2.postprocess import filtrar_citas_no_rag
 from .prompts import prompt_etapa1, prompt_etapa2
 from .citations import extraer_whitelist, construir_bloque_citas, preprocesar_rag
+from users.scoping import nombre_establecimiento
 
 
-ESTABLISHMENT_NAMES: dict[str, str] = {
-    'TEMUCO':   'Temuco',
-    'LAUTARO':  'Lautaro',
-    'RENAICO':  'Renaico',
-    'SANTIAGO': 'Santiago',
-    'IMPERIAL': 'Imperial',
-    'ERCILLA':  'Ercilla',
-    'ARAUCO':   'Arauco',
-    'ANGOL':    'Angol',
-}
 
 
 def _extraer_competencia(texto: str) -> tuple[str, str]:
@@ -93,7 +84,7 @@ def call_ai_v3(assistant, messages_history, user_query, temperature=0.3, attache
 
     role_code = (assistant.profile_role or '').upper()
     est_code = (assistant.establishment or '').upper()
-    est_name = ESTABLISHMENT_NAMES.get(est_code, est_code.title())
+    est_name = nombre_establecimiento(est_code, assistant.organizacion_id)
 
     # ── ETAPA 1: decisión de competencia ────────────────────────────────────
     try:

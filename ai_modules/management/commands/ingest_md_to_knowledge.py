@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--file', type=str, required=True, help='Nombre del archivo en ai_modules/knowledge_base/')
-        parser.add_argument('--nivel', type=str, default='institucional', choices=['nacional', 'institucional', 'congregacional'])
+        parser.add_argument('--nivel', type=str, default='institucional', choices=['nacional', 'institucional', 'organizacional'])
         parser.add_argument('--establecimiento', type=str, default='temuco')
         parser.add_argument('--rol', type=str, default=None)
         parser.add_argument('--assistant', type=str, default='global-knowledge', help='Slug del asistente destino')
