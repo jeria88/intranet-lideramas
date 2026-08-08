@@ -28,6 +28,8 @@ urlpatterns = [
     path('simce/', include('simce.urls')),
     path('eventos/', include('eventos.urls')),
     path('encuesta/', include('encuesta.urls')),
+    # CRM comercial: a quién le vendemos el producto. Solo staff.
+    path('crm/', include('crm.urls')),
 ]
 
 if settings.DEBUG:

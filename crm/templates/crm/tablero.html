@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}CRM comercial | LíderA+{% endblock %}
+
+{% block content %}
+<style>
+  .crm-metricas { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+  .crm-metrica { background:#fff; border:1px solid #e3e6ea; border-radius:10px;
+                 padding:14px 18px; min-width:132px; }
+  .crm-metrica .n { font-size:28px; font-weight:700; line-height:1; }
+  .crm-metrica .t { font-size:12px; color:#6b7280; margin-top:6px; }
+  .crm-metrica.principal { border-color:#1e73be; box-shadow:0 0 0 1px #1e73be inset; }
+
+  .crm-tablero { display:flex; gap:14px; overflow-x:auto; padding-bottom:18px; align-items:flex-start; }
+  .crm-col { background:#f5f6f8; border-radius:10px; min-width:264px; flex:0 0 264px; }
+  .crm-col h3 { margin:0; padding:12px 14px; font-size:13px; text-transform:uppercase;
+                letter-spacing:.04em; color:#4b5563; border-bottom:1px solid #e3e6ea; }
+  .crm-col h3 .cuenta { float:right; color:#9ca3af; }
+  .crm-col.terminal h3 { color:#166534; }
+  .crm-lista { padding:10px; display:flex; flex-direction:column; gap:8px; min-height:60px; }
+
+  .crm-lead { background:#fff; border:1px solid #e3e6ea; border-radius:8px; padding:10px 12px;
+              cursor:grab; text-decoration:none; color:inherit; display:block; }
+  .crm-lead:hover { border-color:#1e73be; }
+  .crm-lead .n { font-weight:600; font-size:14px; }
+  .crm-lead .m { font-size:12px; color:#6b7280; margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; }
+  .crm-lead .score { font-variant-numeric:tabular-nums; }
+  .crm-lead.sin-tocar { border-left:3px solid #f59e0b; }
+  .crm-col .crm-lista.arrastrando { background:#e8f0fb; border-radius:8px; }
+  .crm-vacio { color:#9ca3af; font-size:13px; padding:8px 4px; }
+</style>
+
+<h1 style="margin-bottom:6px;">CRM comercial</h1>
+<p style="color:#6b7280; margin-top:0;">
+  A quién le vendemos LíderA+. No son datos de clientes: son los datos con los que se consigue uno.
+</p>
+
+<div class="crm-metricas">
+  <div class="crm-metrica principal">
+    <div class="n">{{ metricas.conversaciones_hoy }}</div>
+    <div class="t">Conversaciones hoy</div>
+  </div>
+  <div class="crm-metrica">
+    <div class="n">{{ metricas.conversaciones_total }}</div>
+    <div class="t">Acumuladas</div>
+  </div>
+  <div class="crm-metrica">
+    <div class="n">{{ metricas.respuestas }}</div>
+    <div class="t">Respondieron</div>
+  </div>
+  <div class="crm-metrica">
+    <div class="n">{{ metricas.leads }}</div>
+    <div class="t">Leads</div>
+  </div>
+  <div class="crm-metrica">
+    <div class="n">{{ metricas.sin_contactar }}</div>
+    <div class="t">Sin contactar</div>
+  </div>
+</div>
+
+<form method="get" style="margin-bottom:16px;">
+  <label style="font-size:13px; color:#4b5563;">Target:</label>
+  <select name="target" onchange="this.form.submit()">
+    {% for t in targets %}
+      <option value="{{ t.pk }}" {% if target and t.pk == target.pk %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+{% if columnas %}
+<div class="crm-tablero">
+  {% for col in columnas %}
+    <div class="crm-col {% if col.etapa.es_terminal %}terminal{% endif %}">
+      <h3>{{ col.etapa.nombre }} <span class="cuenta">{{ col.leads|length }}</span></h3>
+      <div class="crm-lista" data-etapa="{{ col.etapa.pk }}">
+        {% for lead in col.leads %}
+          <a class="crm-lead {% if not lead.ultimo_contacto %}sin-tocar{% endif %}"
+             href="{% url 'crm:lead_detalle' lead.pk %}" draggable="true" data-lead="{{ lead.pk }}">
+            <div class="n">{{ lead.nombre }}</div>
+            <div class="m">
+              <span class="score">★ {{ lead.score }}/6</span>
+              {% if lead.rbd %}<span>RBD {{ lead.rbd }}</span>{% endif %}
+              {% if lead.ultimo_contacto %}
+                <span>{{ lead.ultimo_contacto|date:"d/m" }}</span>
+              {% else %}
+                <span>sin contactar</span>
+              {% endif %}
+            </div>
+          </a>
+        {% empty %}
+          <div class="crm-vacio">—</div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% else %}
+  <p>No hay targets activos. Creá uno en <a href="/admin/crm/target/">el administrador</a>.</p>
+{% endif %}
+
+<script>
+(function () {
+  var arrastrado = null;
+
+  document.querySelectorAll('.crm-lead').forEach(function (tarjeta) {
+    tarjeta.addEventListener('dragstart', function (e) {
+      arrastrado = tarjeta;
+      e.dataTransfer.effectAllowed = 'move';
+    });
+  });
+
+  document.querySelectorAll('.crm-lista').forEach(function (lista) {
+    lista.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      lista.classList.add('arrastrando');
+    });
+    lista.addEventListener('dragleave', function () {
+      lista.classList.remove('arrastrando');
+    });
+    lista.addEventListener('drop', function (e) {
+      e.preventDefault();
+      lista.classList.remove('arrastrando');
+      if (!arrastrado) return;
+
+      var datos = new FormData();
+      datos.append('etapa', lista.dataset.etapa);
+      datos.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+      fetch('/crm/lead/' + arrastrado.dataset.lead + '/mover/', {
+        method: 'POST',
+        body: datos,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      }).then(function (r) {
+        // Recargar y no mover el nodo a mano: el contador de cada columna y el
+        // orden quedan mal si se simula el resultado en el cliente.
+        if (r.ok) { window.location.reload(); }
+      });
+    });
+  });
+})();
+</script>
+{% csrf_token %}
+{% endblock %}

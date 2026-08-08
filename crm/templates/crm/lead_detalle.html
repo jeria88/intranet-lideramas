@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ lead.nombre }} | CRM{% endblock %}
+
+{% block content %}
+<style>
+  .crm-ficha { display:grid; grid-template-columns:1fr 340px; gap:22px; align-items:start; }
+  @media (max-width: 900px) { .crm-ficha { grid-template-columns:1fr; } }
+  .crm-caja { background:#fff; border:1px solid #e3e6ea; border-radius:10px; padding:18px; }
+  .crm-caja h2 { margin-top:0; font-size:15px; text-transform:uppercase;
+                 letter-spacing:.04em; color:#4b5563; }
+  .crm-dato { display:flex; justify-content:space-between; gap:12px; padding:7px 0;
+              border-bottom:1px solid #f1f3f5; font-size:14px; }
+  .crm-dato:last-child { border-bottom:0; }
+  .crm-dato .k { color:#6b7280; }
+  .crm-toque { border-left:3px solid #e3e6ea; padding:8px 0 8px 12px; margin-bottom:14px; }
+  .crm-toque.respondio { border-left-color:#16a34a; }
+  .crm-toque .cab { font-size:12px; color:#6b7280; margin-bottom:5px; }
+  .crm-toque .txt { white-space:pre-wrap; font-size:14px; }
+  .crm-toque .resp { white-space:pre-wrap; font-size:14px; background:#f0fdf4;
+                     border-radius:6px; padding:8px 10px; margin-top:8px; }
+  .crm-form label { display:block; font-size:13px; color:#4b5563; margin:10px 0 4px; }
+  .crm-form textarea, .crm-form select { width:100%; padding:8px; border:1px solid #d1d5db;
+                                         border-radius:6px; font-family:inherit; font-size:14px; }
+</style>
+
+<p style="margin-bottom:4px;"><a href="{% url 'crm:tablero' %}?target={{ lead.target.pk }}">← Tablero</a></p>
+<h1 style="margin-top:0;">{{ lead.nombre }}</h1>
+<p style="color:#6b7280; margin-top:0;">{{ lead.target }} · ★ {{ lead.score }}/6</p>
+
+<div class="crm-ficha">
+  <div>
+    <div class="crm-caja" style="margin-bottom:18px;">
+      <h2>Historial de contacto</h2>
+      {% for c in contactos %}
+        <div class="crm-toque {% if c.respondio %}respondio{% endif %}">
+          <div class="cab">
+            {{ c.fecha|date:"d/m/Y H:i" }} · {{ c.get_canal_display }}
+            {% if c.enviado_por %}· {{ c.enviado_por.get_full_name|default:c.enviado_por.username }}{% endif %}
+          </div>
+          <div class="txt">{{ c.enviado }}</div>
+          {% if c.respuesta %}<div class="resp"><strong>Respondió:</strong> {{ c.respuesta }}</div>{% endif %}
+        </div>
+      {% empty %}
+        <p style="color:#9ca3af;">Todavía no se le escribió. Ese es el trabajo.</p>
+      {% endfor %}
+    </div>
+
+    <div class="crm-caja">
+      <h2>Registrar un contacto</h2>
+      <form method="post" action="{% url 'crm:registrar_contacto' lead.pk %}" class="crm-form">
+        {% csrf_token %}
+        <label>Canal</label>
+        <select name="canal">
+          {% for valor, etiqueta in canales %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+        </select>
+        <label>Mensaje enviado</label>
+        <textarea name="enviado" rows="4" required></textarea>
+        <label>Respuesta (si ya contestó)</label>
+        <textarea name="respuesta" rows="3"></textarea>
+        <button type="submit" class="btn-primary" style="margin-top:12px;">Registrar</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="crm-caja" style="margin-bottom:18px;">
+      <h2>Datos</h2>
+      <div class="crm-dato"><span class="k">Contacto</span><span>{{ lead.contacto|default:"—" }}</span></div>
+      <div class="crm-dato"><span class="k">Cargo</span><span>{{ lead.cargo|default:"—" }}</span></div>
+      <div class="crm-dato"><span class="k">Correo</span><span>{{ lead.email|default:"—" }}</span></div>
+      <div class="crm-dato"><span class="k">Teléfono</span><span>{{ lead.telefono|default:"—" }}</span></div>
+      <div class="crm-dato"><span class="k">Web</span><span>{% if lead.web %}<a href="{{ lead.web }}" target="_blank" rel="noopener">abrir</a>{% else %}—{% endif %}</span></div>
+      <div class="crm-dato"><span class="k">RBD</span><span>{{ lead.rbd|default:"—" }}</span></div>
+      <div class="crm-dato"><span class="k">Dirección</span><span>{{ lead.direccion|default:"—" }}</span></div>
+      <div class="crm-dato"><span class="k">Origen</span><span>{{ lead.get_origen_display }}</span></div>
+    </div>
+
+    <div class="crm-caja">
+      <h2>Etapa</h2>
+      <form method="post" action="{% url 'crm:mover_lead' lead.pk %}" class="crm-form">
+        {% csrf_token %}
+        <select name="etapa" onchange="this.form.submit()">
+          {% for e in etapas %}
+            <option value="{{ e.pk }}" {% if e.pk == lead.etapa_id %}selected{% endif %}>{{ e.nombre }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% if lead.notas %}<p style="font-size:14px; white-space:pre-wrap; margin-top:14px;">{{ lead.notas }}</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
