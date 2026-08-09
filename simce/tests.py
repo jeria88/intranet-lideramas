@@ -274,6 +274,49 @@ class RendicionPublicaTests(TestCase):
         self.assertEqual(resp.status_code, 404)
 
 
+class ParseoDeJsonDelModeloTests(TestCase):
+    """Un LLM devuelve JSON *casi* válido, y el "casi" tumbaba la generación.
+
+    Caso real en producción al armar el primer ensayo de demostración:
+    `JSONDecodeError: Expecting property name enclosed in double quotes`, y el UTP
+    veía la prueba en estado `error` sin ninguna explicación.
+    """
+
+    def _cargar(self, crudo):
+        from simce.generator import _cargar_json
+        return _cargar_json(crudo, 'prueba')
+
+    def test_tolera_coma_final_antes_de_llave(self):
+        self.assertEqual(self._cargar('{"a": 1, "b": 2,}'), {'a': 1, 'b': 2})
+
+    def test_tolera_coma_final_antes_de_corchete(self):
+        self.assertEqual(self._cargar('{"xs": [1, 2, 3,]}'), {'xs': [1, 2, 3]})
+
+    def test_tolera_vallas_de_codigo_con_y_sin_lenguaje(self):
+        self.assertEqual(self._cargar('```json\n{"a": 1}\n```'), {'a': 1})
+        self.assertEqual(self._cargar('```\n{"a": 1}\n```'), {'a': 1})
+
+    def test_tolera_prosa_alrededor(self):
+        self.assertEqual(self._cargar('Aquí tienes:\n{"a": 1}\nEspero que sirva.'), {'a': 1})
+
+    def test_tolera_comas_finales_anidadas(self):
+        datos = self._cargar('{"preguntas": [{"n": 1, "alts": ["a", "b",],}, ]}')
+        self.assertEqual(datos['preguntas'][0]['n'], 1)
+
+    def test_lo_que_no_es_json_sigue_fallando(self):
+        """Se arreglan defectos de formato, nunca contenido: si el modelo devolvió
+        cualquier cosa, tiene que notarse."""
+        with self.assertRaises(ValueError):
+            self._cargar('esto no es json en absoluto')
+
+    def test_el_error_dice_que_paso_y_muestra_el_fragmento(self):
+        with self.assertRaises(ValueError) as ctx:
+            self._cargar('{"a": 1, "b": }')
+        mensaje = str(ctx.exception)
+        self.assertIn('JSON inválido', mensaje)
+        self.assertIn('prueba', mensaje, 'el error no dice en qué paso falló')
+
+
 class PermisosDelPanelTests(TestCase):
     """Quién administra ensayos. El UTP es quien los arma y quien compra el módulo:
     si no puede entrar, no hay demo que mostrarle."""

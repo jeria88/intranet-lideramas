@@ -561,8 +561,7 @@ Responde SOLO con JSON válido:
         max_tokens=5000,
         temperature=0.7,
     )
-    raw = _clean_json(resp.choices[0].message.content)
-    data = json.loads(raw)
+    data = _cargar_json(resp.choices[0].message.content, 'la generación de texto')
 
     contenido = data['contenido']
     if len(contenido.replace(' ', '')) < 1500:
@@ -705,8 +704,7 @@ Responde SOLO con JSON válido:
         max_tokens=6000,
         temperature=0.5,
     )
-    raw = _clean_json(resp.choices[0].message.content)
-    data = json.loads(raw)
+    data = _cargar_json(resp.choices[0].message.content, 'la generación de preguntas')
 
     creadas = []
     for p in data['preguntas']:
@@ -852,8 +850,7 @@ Responde SOLO con JSON:
         max_tokens=5000,
         temperature=0.6,
     )
-    raw    = _clean_json(resp.choices[0].message.content)
-    result = json.loads(raw)
+    result = _cargar_json(resp.choices[0].message.content, 'el ajuste de texto')
 
     contenido = result['contenido']
     return {
@@ -914,10 +911,54 @@ def validar_rubrica_prueba(prueba):
 # ── Helpers ───────────────────────────────────────────────────────
 
 def _clean_json(text):
-    text = text.strip()
-    text = re.sub(r'^```json\s*', '', text)
+    """Deja el JSON del modelo en algo que `json.loads` pueda leer.
+
+    Un LLM devuelve JSON casi válido, y el "casi" tumbaba la generación entera:
+    una coma de más antes de un `}` reventaba con `JSONDecodeError` y el UTP veía
+    la prueba en estado `error` sin explicación. Pasó en producción al armar el
+    primer ensayo de demostración.
+
+    Se corrigen solo defectos de formato, nunca contenido: si el modelo devolvió
+    algo que no es JSON, tiene que seguir fallando.
+    """
+    text = (text or '').strip()
+
+    # Vallas de código, con o sin etiqueta de lenguaje, en cualquier posición.
+    text = re.sub(r'^```[a-zA-Z]*\s*', '', text)
     text = re.sub(r'\s*```$', '', text)
-    return text
+
+    # Prosa antes o después del objeto ("Aquí tienes el JSON:").
+    inicio, fin = text.find('{'), text.rfind('}')
+    if inicio > 0 or (fin != -1 and fin < len(text) - 1):
+        if inicio != -1 and fin > inicio:
+            text = text[inicio:fin + 1]
+
+    # Comas finales antes de cerrar objeto o lista: el defecto más común.
+    text = re.sub(r',(\s*[}\]])', r'\1', text)
+
+    return text.strip()
+
+
+def _cargar_json(raw, contexto=''):
+    """`json.loads` con un segundo intento y un error que dice qué pasó.
+
+    Sin esto, el traceback muestra la posición del carácter pero no el texto, y
+    diagnosticar por qué falló una generación exige reproducirla entera.
+    """
+    limpio = _clean_json(raw)
+    try:
+        return json.loads(limpio)
+    except json.JSONDecodeError as exc:
+        # Último recurso: quedarse con el bloque balanceado más largo.
+        recorte = limpio[:limpio.rfind('}') + 1] if '}' in limpio else limpio
+        try:
+            return json.loads(recorte)
+        except json.JSONDecodeError:
+            fragmento = limpio[max(0, exc.pos - 120):exc.pos + 120]
+            raise ValueError(
+                f"El modelo devolvió JSON inválido{' en ' + contexto if contexto else ''}: "
+                f"{exc.msg} (posición {exc.pos}).\n…{fragmento}…"
+            ) from exc
 
 
 def _ampliar_texto(contenido, tipo_textual, asignatura, curso):
@@ -934,8 +975,7 @@ def _ampliar_texto(contenido, tipo_textual, asignatura, curso):
         max_tokens=4000,
         temperature=0.6,
     )
-    raw = _clean_json(resp.choices[0].message.content)
-    return json.loads(raw).get('contenido', contenido)
+    return _cargar_json(resp.choices[0].message.content, 'la ampliación de texto').get('contenido', contenido)
 
 
 def _distribuir_alternativas(n):
