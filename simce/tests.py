@@ -364,6 +364,87 @@ class BarajadoDeAlternativasTests(TestCase):
         self.assertEqual(_barajar_alternativas([]), [])
 
 
+class RebalanceoDeLaPruebaTests(TestCase):
+    """Barajar cada pregunta por separado no alcanza: con 6 preguntas y azar, lo
+    normal es que alguna letra quede en cero y la rúbrica exige las cuatro.
+    Se vio en la primera prueba real: A:3 B:1 C:0 D:2."""
+
+    def _prueba_con(self, n_preguntas, correcta_en='D'):
+        prueba, preguntas = _cadena_minima(n_preguntas=n_preguntas)
+        for pregunta in preguntas:
+            pregunta.alternativa_correcta = correcta_en
+            pregunta.save(update_fields=['alternativa_correcta'])
+            for letra in 'ABCD':
+                Alternativa.objects.create(
+                    pregunta=pregunta, letra=letra, texto=f'Opción {letra} de P{pregunta.orden}',
+                    es_correcta=(letra == correcta_en),
+                )
+        return prueba, preguntas
+
+    def _distribucion(self, prueba):
+        from simce.models import Pregunta
+        letras = [p.alternativa_correcta for p in Pregunta.objects.filter(prueba_texto__prueba=prueba)]
+        return {l: letras.count(l) for l in 'ABCD'}
+
+    def test_con_cuatro_preguntas_cubre_las_cuatro_letras(self):
+        from simce.generator import rebalancear_alternativas
+
+        prueba, preguntas = self._prueba_con(4)
+        self.assertEqual(self._distribucion(prueba), {'A': 0, 'B': 0, 'C': 0, 'D': 4})
+
+        rebalancear_alternativas(preguntas)
+
+        self.assertEqual(self._distribucion(prueba), {'A': 1, 'B': 1, 'C': 1, 'D': 1})
+
+    def test_con_ocho_preguntas_queda_parejo(self):
+        from simce.generator import rebalancear_alternativas
+
+        prueba, preguntas = self._prueba_con(8)
+        rebalancear_alternativas(preguntas)
+        self.assertEqual(self._distribucion(prueba), {'A': 2, 'B': 2, 'C': 2, 'D': 2})
+
+    def test_la_prueba_pasa_la_rubrica_despues_de_rebalancear(self):
+        """El criterio que bloqueaba la publicación de toda prueba generada."""
+        from simce.generator import rebalancear_alternativas, validar_rubrica_prueba
+
+        prueba, preguntas = self._prueba_con(6)
+        antes = validar_rubrica_prueba(prueba)['criterios']['distribucion_alternativas']
+        self.assertFalse(antes['ok'], 'el caso de partida ya estaba bien, no prueba nada')
+
+        rebalancear_alternativas(preguntas)
+
+        despues = validar_rubrica_prueba(prueba)['criterios']['distribucion_alternativas']
+        self.assertTrue(despues['ok'], f"sigue sin pasar: {despues['detalle']}")
+
+    def test_el_texto_correcto_sigue_siendo_el_correcto(self):
+        """Lo que no puede pasar: mover la letra y que la respuesta buena cambie."""
+        from simce.generator import rebalancear_alternativas
+
+        prueba, preguntas = self._prueba_con(4)
+        textos_correctos = {
+            p.pk: p.alternativas.get(es_correcta=True).texto for p in preguntas
+        }
+
+        rebalancear_alternativas(preguntas)
+
+        for pregunta in preguntas:
+            pregunta.refresh_from_db()
+            correcta = pregunta.alternativas.get(es_correcta=True)
+            self.assertEqual(correcta.texto, textos_correctos[pregunta.pk])
+            self.assertEqual(correcta.letra, pregunta.alternativa_correcta)
+
+    def test_cada_pregunta_conserva_sus_cuatro_letras(self):
+        from simce.generator import rebalancear_alternativas
+
+        prueba, preguntas = self._prueba_con(5)
+        rebalancear_alternativas(preguntas)
+
+        for pregunta in preguntas:
+            letras = sorted(pregunta.alternativas.values_list('letra', flat=True))
+            self.assertEqual(letras, list('ABCD'))
+            self.assertEqual(pregunta.alternativas.filter(es_correcta=True).count(), 1)
+
+
 class PermisosDelPanelTests(TestCase):
     """Quién administra ensayos. El UTP es quien los arma y quien compra el módulo:
     si no puede entrar, no hay demo que mostrarle."""

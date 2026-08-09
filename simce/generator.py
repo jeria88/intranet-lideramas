@@ -824,7 +824,52 @@ def poblar_preguntas_prueba_texto(prueba_texto_obj):
                 )
             creadas.append(pregunta)
 
+    rebalancear_alternativas(creadas)
     return creadas
+
+
+def rebalancear_alternativas(preguntas):
+    """Reparte las respuestas correctas entre A-D a lo largo de toda la prueba.
+
+    Barajar cada pregunta por separado no alcanza: con 6 preguntas y azar, lo
+    normal es que alguna letra quede en cero, y la rúbrica exige las cuatro
+    (`distribucion_alternativas`). Se vio en la primera prueba real: A:3 B:1 C:0 D:2.
+
+    Acá la letra objetivo se asigna en round-robin sobre el orden de la prueba, y
+    después se permutan las alternativas de cada pregunta para que la correcta
+    caiga ahí. El contenido no cambia: solo la letra con la que se rotula.
+    """
+    from .models import Alternativa
+
+    objetivo = 'ABCD'
+    for indice, pregunta in enumerate(preguntas):
+        alternativas = list(pregunta.alternativas.all())
+        if len(alternativas) != 4:
+            continue  # sin las cuatro no hay nada que balancear
+
+        letra_destino = objetivo[indice % 4]
+        correcta = next((a for a in alternativas if a.es_correcta), None)
+        if correcta is None or correcta.letra == letra_destino:
+            continue
+
+        # Intercambio en tres pasos y no en uno: hay `unique_together(pregunta,
+        # letra)`, así que escribir las dos letras a la vez deja un instante con
+        # la misma letra repetida y la base lo rechaza. La letra puente sale del
+        # juego A-D justamente para no chocar con ninguna existente.
+        ocupante = next(a for a in alternativas if a.letra == letra_destino)
+        letra_original = correcta.letra
+
+        ocupante.letra = '_'
+        ocupante.save(update_fields=['letra'])
+        correcta.letra = letra_destino
+        correcta.save(update_fields=['letra'])
+        ocupante.letra = letra_original
+        ocupante.save(update_fields=['letra'])
+
+        pregunta.alternativa_correcta = letra_destino
+        pregunta.save(update_fields=['alternativa_correcta'])
+
+    return preguntas
 
 
 # ── Ajuste de texto (largo o dificultad) ─────────────────────────
