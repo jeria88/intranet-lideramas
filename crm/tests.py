@@ -258,6 +258,20 @@ class TableroYRegistroTests(TestCase):
         self.assertEqual(self.lead.contactos.count(), 0)
         self.assertTrue(any('falta el texto' in str(m) for m in resp.context['messages']))
 
+    def test_conversaciones_hoy_usa_la_fecha_local_no_la_utc(self):
+        """Entre las 20:00 y la medianoche de Chile ya es el día siguiente en UTC:
+        con `now().date()` el contador del día se vaciaba justo en la franja en que
+        se hacen las llamadas."""
+        from django.utils import timezone
+
+        Contacto.objects.create(lead=self.lead, enviado='Hola')
+        resp = self.client.get('/crm/')
+
+        self.assertEqual(resp.context['metricas']['conversaciones_hoy'], 1)
+        self.assertEqual(
+            Contacto.objects.filter(fecha__date=timezone.localdate()).count(), 1,
+        )
+
     def test_las_metricas_cuentan_conversaciones_no_leads(self):
         """La métrica que decide el día es conversaciones con desconocidos: es la
         única que no depende de un algoritmo ajeno."""
@@ -353,6 +367,67 @@ class ImportarLeadsTests(TestCase):
     def test_el_score_se_calcula_al_importar(self):
         self._importar('nombre,email,telefono,web,direccion\nCompleto,a@x.cl,+569,https://x.cl,Calle 1\n')
         self.assertEqual(Lead.objects.get().score, 6)
+
+
+class PlantillasTests(TestCase):
+    """El borrador tiene que llegar escrito: si hay que redactar de cero cada vez,
+    el bloque de contacto no se sostiene."""
+
+    def setUp(self):
+        self.target = _target()
+        self.lead = Lead.objects.create(
+            target=self.target, nombre='Colegio San Marcos', contacto='Ana Rivera',
+        )
+        self.franco = User.objects.create_user(username='franco', password='clave', is_staff=True)
+        self.client.login(username='franco', password='clave')
+
+    def test_el_borrador_usa_el_nombre_del_contacto_y_del_colegio(self):
+        from crm.plantillas import redactar
+
+        b = redactar(self.lead)
+        self.assertIn('Ana Rivera', b['cuerpo'])
+        self.assertIn('Colegio San Marcos', b['asunto'])
+
+    def test_un_lead_sin_contacto_deja_el_hueco_visible(self):
+        """Un marcador sin reemplazar tiene que saltar a la vista antes de enviar,
+        no viajar dentro del mensaje."""
+        from crm.plantillas import redactar
+
+        sin_nombre = Lead.objects.create(target=self.target, nombre='Escuela Sin Contacto')
+        self.assertIn('¿...?', redactar(sin_nombre)['cuerpo'])
+
+    def test_ninguna_plantilla_tiene_voseo_rioplatense(self):
+        import re
+
+        from crm.plantillas import PRIMER_CONTACTO, SEGUIMIENTO
+
+        textos = [p['cuerpo'] for p in PRIMER_CONTACTO.values()] + list(SEGUIMIENTO.values())
+        patron = r'\b(ten[eé]s|quer[eé]s|pod[eé]s|escribinos|escribime|sos|and[aá]|mir[aá])\b'
+        for texto in textos:
+            self.assertIsNone(re.search(patron, texto, re.IGNORECASE), f'voseo en: {texto[:60]}')
+
+    def test_ninguna_plantilla_deja_marcadores_sin_cerrar(self):
+        from crm.plantillas import PRIMER_CONTACTO, redactar
+
+        for clave in PRIMER_CONTACTO:
+            b = redactar(self.lead, clave)
+            self.assertNotIn('{', b['cuerpo'], f'marcador sin reemplazar en {clave}')
+            self.assertNotIn('{', b['asunto'], f'marcador sin reemplazar en {clave}')
+
+    def test_la_ficha_trae_el_borrador_cargado(self):
+        resp = self.client.get(f'/crm/lead/{self.lead.pk}/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Ana Rivera')
+        self.assertEqual(resp.context['plantilla_activa'], 'educacion_utp')
+
+    def test_se_puede_elegir_otra_plantilla(self):
+        resp = self.client.get(f'/crm/lead/{self.lead.pk}/?plantilla=educacion_director')
+        self.assertEqual(resp.context['plantilla_activa'], 'educacion_director')
+        self.assertIn('equipos directivos', resp.context['borrador']['cuerpo'].lower())
+
+    def test_una_plantilla_inexistente_no_rompe_la_ficha(self):
+        resp = self.client.get(f'/crm/lead/{self.lead.pk}/?plantilla=no_existe')
+        self.assertEqual(resp.status_code, 200)
 
 
 class VerticalesTests(TestCase):

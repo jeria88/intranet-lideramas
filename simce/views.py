@@ -22,7 +22,24 @@ from .generator import (
 )
 
 CURSOS_SIMCE = [('4B', '4° Básico'), ('6B', '6° Básico')]
-is_staff = lambda u: u.is_staff or u.is_superuser
+def is_staff(u):
+    """Quién puede administrar ensayos SIMCE.
+
+    Se llamaba así porque solo dejaba pasar a `is_staff`, y eso dejaba fuera al
+    UTP — que es justamente quien arma los ensayos y quien compra este módulo.
+    Un colegio cliente no tiene usuarios `is_staff`: los crea el proveedor.
+
+    Abrirlo a UTP y Director es seguro porque el alcance ya está resuelto en otra
+    capa: el manager filtra por la organización del request, así que cada uno ve
+    únicamente las pruebas de su propio colegio.
+
+    El nombre se conserva para no tocar los 26 decoradores que lo usan.
+    """
+    if not u.is_authenticated:
+        return False
+    if u.is_staff or u.is_superuser:
+        return True
+    return u.role in ('UTP', 'DIRECTOR') and u.organizacion_id is not None
 
 
 # ── Helpers de fondo ──────────────────────────────────────────────

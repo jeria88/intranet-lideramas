@@ -47,14 +47,28 @@
 
     <div class="crm-caja">
       <h2>Registrar un contacto</h2>
+      <form method="get" style="margin-bottom:14px;">
+        <label style="font-size:13px;color:#4b5563;">Plantilla</label>
+        <select name="plantilla" onchange="this.form.submit()" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+          {% for clave, etiqueta in plantillas %}
+            <option value="{{ clave }}" {% if clave == plantilla_activa %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
       <form method="post" action="{% url 'crm:registrar_contacto' lead.pk %}" class="crm-form">
         {% csrf_token %}
         <label>Canal</label>
         <select name="canal">
           {% for valor, etiqueta in canales %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
         </select>
-        <label>Mensaje enviado</label>
-        <textarea name="enviado" rows="4" required></textarea>
+        {% if borrador.asunto %}
+          <label>Asunto sugerido</label>
+          <input type="text" value="{{ borrador.asunto }}" readonly
+                 style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;">
+        {% endif %}
+        <label>Mensaje enviado <span style="font-weight:400;color:#9ca3af;">— borrador cargado, revíselo antes de mandarlo</span></label>
+        <textarea name="enviado" rows="12" required>{{ borrador.cuerpo }}</textarea>
         <label>Respuesta (si ya contestó)</label>
         <textarea name="respuesta" rows="3"></textarea>
         <button type="submit" class="btn-primary" style="margin-top:12px;">Registrar</button>

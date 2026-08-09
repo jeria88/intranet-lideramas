@@ -274,6 +274,71 @@ class RendicionPublicaTests(TestCase):
         self.assertEqual(resp.status_code, 404)
 
 
+class PermisosDelPanelTests(TestCase):
+    """Quién administra ensayos. El UTP es quien los arma y quien compra el módulo:
+    si no puede entrar, no hay demo que mostrarle."""
+
+    @classmethod
+    def setUpTestData(cls):
+        from users.models import Organizacion
+
+        cls.org = Organizacion.objects.create(slug='colegio_p', nombre='Colegio P')
+        cls.otra = Organizacion.objects.create(slug='colegio_q', nombre='Colegio Q')
+
+        def usuario(nombre, rol, org=cls.org, **extra):
+            return User.objects.create_user(
+                username=nombre, password='clave', tenant=org.slug if org else '',
+                role=rol, organizacion=org, **extra,
+            )
+
+        cls.utp = usuario('utp', 'UTP')
+        cls.director = usuario('director', 'DIRECTOR')
+        cls.inspector = usuario('inspector', 'INSPECTOR')
+        cls.suelto = usuario('suelto', 'UTP', org=None)
+        cls.soporte = User.objects.create_superuser(username='soporte', password='clave')
+
+    def _abre_panel(self, user):
+        self.client.force_login(user)
+        return self.client.get('/simce/').status_code
+
+    def test_el_utp_entra(self):
+        self.assertEqual(self._abre_panel(self.utp), 200)
+
+    def test_el_director_entra(self):
+        self.assertEqual(self._abre_panel(self.director), 200)
+
+    def test_el_soporte_entra(self):
+        self.assertEqual(self._abre_panel(self.soporte), 200)
+
+    def test_un_rol_que_no_arma_ensayos_no_entra(self):
+        self.assertNotEqual(self._abre_panel(self.inspector), 200)
+
+    def test_un_utp_sin_organizacion_no_entra(self):
+        """Sin organización el alcance sería nulo: entraría a un panel vacío y,
+        peor, sin nada que lo acote."""
+        self.assertNotEqual(self._abre_panel(self.suelto), 200)
+
+    def test_el_anonimo_no_entra(self):
+        self.assertNotEqual(self.client.get('/simce/').status_code, 200)
+
+    def test_cada_utp_ve_solo_las_pruebas_de_su_colegio(self):
+        """El permiso se abre, pero el aislamiento sigue mandando."""
+        mia, _ = _cadena_minima(titulo='De mi colegio')
+        mia.organizacion = self.org
+        mia.save(update_fields=['organizacion'])
+
+        ajena, _ = _cadena_minima(titulo='Del colegio vecino')
+        ajena.organizacion = self.otra
+        ajena.save(update_fields=['organizacion'])
+
+        self.client.force_login(self.utp)
+        resp = self.client.get('/simce/')
+
+        titulos = [p.titulo for p in resp.context['pruebas']]
+        self.assertIn('De mi colegio', titulos)
+        self.assertNotIn('Del colegio vecino', titulos)
+
+
 class TextoBibliotecaTests(TestCase):
     def test_word_count_y_char_count_se_calculan_al_guardar(self):
         texto = TextoBiblioteca.objects.create(
