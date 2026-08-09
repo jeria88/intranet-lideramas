@@ -708,6 +708,12 @@ Responde SOLO con JSON válido:
 
     creadas = []
     for p in data['preguntas']:
+        alternativas = _barajar_alternativas(p.get('alternativas', []))
+        correcta = next(
+            (a['letra'] for a in alternativas if a.get('es_correcta')),
+            p['alternativa_correcta'],
+        )
+
         pregunta_obj = PreguntaBanco.objects.create(
             texto=texto_obj,
             enunciado=p['enunciado'],
@@ -715,12 +721,12 @@ Responde SOLO con JSON válido:
             habilidad=p['habilidad'],
             habilidad_justificacion=p.get('habilidad_justificacion', ''),
             nivel_justificacion=p.get('nivel_justificacion', ''),
-            alternativa_correcta=p['alternativa_correcta'],
+            alternativa_correcta=correcta,
             pista_1=p.get('pista_1', ''),
             pista_2=p.get('pista_2', ''),
             estado='pendiente',
         )
-        for alt in p.get('alternativas', []):
+        for alt in alternativas:
             AlternativaBanco.objects.create(
                 pregunta=pregunta_obj,
                 letra=alt['letra'],
@@ -730,6 +736,29 @@ Responde SOLO con JSON válido:
             )
         creadas.append(pregunta_obj)
     return creadas
+
+
+def _barajar_alternativas(alternativas):
+    """Reparte la alternativa correcta entre A-D en vez de dejarla donde la puso
+    el modelo.
+
+    El modelo la ponía sistemáticamente en D: seis de seis preguntas del primer
+    ensayo real quedaron con la correcta en la misma letra. Eso lo detecta la
+    propia rúbrica (`distribucion_alternativas` → `A:0 B:0 C:0 D:6`, no aprobada),
+    así que ninguna prueba generada llegaba a publicarse — y para un estudiante un
+    patrón así es una pista, no una evaluación.
+
+    Se reordena el contenido y se reasignan las letras en orden; el texto de cada
+    alternativa viaja con su `es_correcta`, así que nada queda desalineado.
+    """
+    if not alternativas:
+        return []
+
+    barajadas = list(alternativas)
+    random.shuffle(barajadas)
+    for letra, alt in zip('ABCD', barajadas):
+        alt['letra'] = letra
+    return barajadas
 
 
 # ── FASE 3: Crear preguntas del test desde el banco ───────────────

@@ -317,6 +317,53 @@ class ParseoDeJsonDelModeloTests(TestCase):
         self.assertIn('prueba', mensaje, 'el error no dice en qué paso falló')
 
 
+class BarajadoDeAlternativasTests(TestCase):
+    """El modelo ponía la correcta siempre en D: 6 de 6 en el primer ensayo real.
+
+    La rúbrica lo detecta (`A:0 B:0 C:0 D:6` → no aprobada), así que ninguna prueba
+    generada llegaba a publicarse. Y para un estudiante, esa regularidad es una
+    pista, no una evaluación.
+    """
+
+    def _alternativas(self, correcta='D'):
+        return [
+            {'letra': l, 'texto': f'Opción {l}', 'es_correcta': l == correcta,
+             'justificacion': f'j{l}'}
+            for l in 'ABCD'
+        ]
+
+    def test_reparte_la_correcta_entre_las_cuatro_letras(self):
+        from simce.generator import _barajar_alternativas
+
+        letras = set()
+        for _ in range(60):
+            barajadas = _barajar_alternativas(self._alternativas('D'))
+            letras.add(next(a['letra'] for a in barajadas if a['es_correcta']))
+        self.assertEqual(letras, set('ABCD'), f'no cubrió las cuatro letras: {letras}')
+
+    def test_el_texto_viaja_con_su_marca_de_correcta(self):
+        """Lo que no puede pasar: reordenar las letras y dejar la marca en otra."""
+        from simce.generator import _barajar_alternativas
+
+        for _ in range(30):
+            barajadas = _barajar_alternativas(self._alternativas('B'))
+            correcta = next(a for a in barajadas if a['es_correcta'])
+            self.assertEqual(correcta['texto'], 'Opción B')
+            self.assertEqual(correcta['justificacion'], 'jB')
+
+    def test_conserva_las_cuatro_y_no_repite_letras(self):
+        from simce.generator import _barajar_alternativas
+
+        barajadas = _barajar_alternativas(self._alternativas())
+        self.assertEqual(len(barajadas), 4)
+        self.assertEqual(sorted(a['letra'] for a in barajadas), list('ABCD'))
+        self.assertEqual(sum(1 for a in barajadas if a['es_correcta']), 1)
+
+    def test_sin_alternativas_no_revienta(self):
+        from simce.generator import _barajar_alternativas
+        self.assertEqual(_barajar_alternativas([]), [])
+
+
 class PermisosDelPanelTests(TestCase):
     """Quién administra ensayos. El UTP es quien los arma y quien compra el módulo:
     si no puede entrar, no hay demo que mostrarle."""
