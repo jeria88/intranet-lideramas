@@ -1,6 +1,6 @@
 # PROGRESS.md — Guía de continuación para cualquier IA
 
-> **Actualizado:** 2026-08-09 · Rama `refactor/multi-tenant` · Últimos commits: `883b60e`, `cc7ca13`, `c0d2d7a` (SIMCE), `c1b33f0` (listo para contactar), `c05093f` (CRM)
+> **Actualizado:** 2026-08-10 · Rama `refactor/multi-tenant` · Últimos commits: `08f1986` (baja de cliente + credenciales), `883b60e` (SIMCE), `c05093f` (CRM)
 > Leer esto ANTES de hacer cualquier cambio al código.
 >
 > **El nombre de la carpeta miente: ya no se despliega en Railway.** Corre en Oracle con systemd. Ver §Despliegue.
@@ -20,7 +20,7 @@
 
 ```bash
 cd ~/Intranet/intranet_railway && KNOWLEDGE_BASE_URL= .venv/bin/python manage.py test
-# 2026-08-09: Ran 205 tests in 164.367s / OK
+# 2026-08-10: Ran 208 tests in 164.874s / OK
 ```
 
 ⚠️ **El `KNOWLEDGE_BASE_URL=` vacío no es opcional.** Sin él, `config/settings.py:104-115` arma un segundo alias de base contra el **Supabase de producción** y el runner intenta crear una base de test ahí. `load_dotenv` no sobrescribe el entorno del shell, así que la variable vacía gana.
@@ -80,7 +80,7 @@ python manage.py crear_organizacion --slug colegio-andes --nombre "Colegio Los A
 python manage.py purgar_organizacion --slug colegio-andes --confirmar colegio-andes
 ```
 
-🕳️ **`purgar_organizacion` NO funciona en la instancia de Oracle.** Al cascadear, `AIAssistant` arrastra `AIKnowledgeChunk`, que el router manda a la base `knowledge_base`, y esa tabla no existe ahí: `ProgrammingError: relation "ai_modules_aiknowledgechunk" does not exist`. La baja de un cliente está rota en producción. Sin arreglar.
+🕳️ **Por qué la baja tiene una parte "best-effort"** (arreglado el 2026-08-10, `08f1986`): `AIKnowledgeChunk` vive en la base `knowledge_base` y su tabla solo se crea ahí. Cuando esa base es un alias de la principal —como corre Oracle— la tabla no existe en ninguna, y el collector de Django la consultaba igual al cascadear: `ProgrammingError: relation "ai_modules_aiknowledgechunk" does not exist`, o sea **la baja de un cliente era imposible en producción**. La FK cruza bases, así que su `CASCADE` prometía integridad que ningún motor puede aplicar; hoy es `DO_NOTHING` + `db_constraint=False` y los fragmentos se limpian con `ai_modules.models.borrar_chunks_de()`. Si la base de conocimiento no responde, el comando **avisa y sigue**: los fragmentos quedan huérfanos, pero el cliente puede darse de baja.
 
 ---
 
@@ -200,12 +200,13 @@ Decisiones copiadas de `acme-leads` y ARQlead, que ya pagaron el aprendizaje:
 - [ ] **Cargar leads en el CRM.** El importador está probado; falta la lista. El directorio del MINEDUC **no está verificado** como descargable — por eso el importador no depende de él.
 
 ### Bloqueado por algo externo
-- [ ] **Dominio propio.** `lideramas.cl` e `intranet.lideramas.cl` resuelven a Cloudflare y devuelven **404**: no hay nada publicado. El `.env` y `ALLOWED_HOSTS` del servidor ya lo contemplan. Requiere tocar Cloudflare.
-- [ ] **Landing** (`~/Proyectos/lideramas/lideramas-web`): alineada y commiteada, **sin deployar**. El push a GitHub no publica solo.
+- [ ] **Dominio propio.** `lideramas.cl` e `intranet.lideramas.cl` devuelven **404**. `lideramas.cl` y `www` ya están agregados al proyecto de Pages por API, pero **falta repuntar el DNS** y el token disponible tiene `zone (read)`, no `dns_records (write)`. Igual para `intranet.lideramas.cl` → `146.181.39.4`. ⚠️ La zona tiene **MX de Zoho activos**: no rozar los MX ni los TXT de correo.
+- [x] **Landing publicada 2026-08-10** — `https://lideramas-web.pages.dev` y sus 5 páginas internas → **200**. Se deploya a mano: el proyecto de Pages **no** está conectado a git, así que el push no publica. Comando: `cd ~/Proyectos/lideramas/lideramas-web && npm run build && wrangler pages deploy dist --project-name=lideramas-web`
 - [ ] **Eval de asistentes** (`manage.py eval_assistants`): gasta API real y los datos de evaluación se fueron con la purga. Sin eso, v1 y v2 no se eliminan y los asesores no se venden.
 
 ### Higiene
-- [ ] 🔒 `director.admin` lo crea `ai_modules/migrations/0017` y la `0021` le fija una **contraseña escrita en el repo**. Estaba activo en la instancia pública sin haber entrado nunca; **desactivado el 2026-08-09** por SQL (`is_active = false`). La migración sigue ahí: cualquier instancia nueva lo vuelve a crear activo.
+- [x] 🔒 **Credenciales en el código — cerrado 2026-08-10.** `director.admin` nacía activo con una contraseña literal dentro de `ai_modules/0021`, y estaba vivo en la instancia pública. El literal salió de la `0021`, la `0028` cierra al usuario donde ya existe (`is_active=false` + hash inutilizable) y `users/tests_marca.py::SinCredencialesEnElCodigoTests` vigila **todo** el código, migraciones incluidas. ⚠️ La contraseña vieja **queda en el historial de git para siempre**: si alguna instancia ajena corrió esa migración, hay que cerrarla ahí a mano.
+- [ ] 🔑 **El servidor no puede hacer `git pull`.** Su única deploy key pertenece al repo de content-studio y GitHub no permite reutilizarla. El deploy del 10-ago fue por `git bundle` + `scp`. Arreglo real: generar una clave nueva en Oracle y registrarla como deploy key de `jeria88/intranet-lideramas`.
 - [ ] Restos de la marca del cliente fuera del alcance del guardia: `ai_modules/management/commands/eval_assistants.py` (slugs `utp-temuco`, `inspector-temuco`… en los casos de prueba) y `scripts/test_pipeline_dev.py` (nombre del colegio en prosa).
 - [ ] `ai_modules/knowledge_base/` (43 MB) son documentos institucionales de una sede concreta. El corpus fuente vive intacto en `~/Intranet/ia-trainning/` (5,8 GB).
 - [ ] Deriva de migraciones: `makemigrations` propone migraciones no relacionadas en 5 apps. Deuda preexistente, no del refactor.
