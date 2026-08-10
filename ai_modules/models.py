@@ -1,8 +1,33 @@
-from django.db import models
+from django.db import DatabaseError, models
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from users.scoping import ModeloDeOrganizacion
+
+
+def borrar_chunks_de(asistentes):
+    """Limpia los fragmentos de conocimiento de unos asistentes que van a morir.
+
+    Hace falta llamarla a mano: la FK de `AIKnowledgeChunk` es `DO_NOTHING` porque
+    cruza bases de datos (ver el comentario del modelo), así que borrar el
+    asistente ya no arrastra sus chunks.
+
+    Devuelve cuántos borró, o `None` si no pudo tocar la base de conocimiento.
+
+    La captura es deliberadamente amplia: esto es un mejor-esfuerzo sobre una base
+    EXTERNA que puede estar caída, no tener la tabla (Oracle hoy) o estar vedada
+    por el runner de tests. Ninguna de esas situaciones puede impedir que un
+    cliente se dé de baja, que es lo que pasaba antes.
+    """
+    ids = [a.pk for a in asistentes] if not hasattr(asistentes, 'values_list') \
+        else list(asistentes.values_list('pk', flat=True))
+    if not ids:
+        return 0
+    try:
+        borrados, _ = AIKnowledgeChunk.objects.filter(assistant_id__in=ids).delete()
+        return borrados
+    except Exception:
+        return None
 
 
 class AIAssistant(ModeloDeOrganizacion):
@@ -141,8 +166,19 @@ class AIChatMessage(models.Model):
 
 
 class AIKnowledgeChunk(models.Model):
+    # Esta tabla vive en OTRA base de datos (`KnowledgeBaseRouter` la manda a
+    # `knowledge_base`), así que la FK cruza bases y el constraint físico no puede
+    # existir: `db_constraint=False` dice la verdad en vez de prometer integridad
+    # que ningún motor puede aplicar.
+    #
+    # `DO_NOTHING` en vez de `CASCADE` porque el collector de Django consulta esta
+    # tabla al borrar un `AIAssistant`, y cuando la base de conocimiento no la
+    # tiene, el borrado revienta entero: era imposible dar de baja a un cliente en
+    # producción. La contrapartida es que los chunks quedan huérfanos, y por eso
+    # existe `borrar_chunks_de()`, que hay que llamar explícitamente.
     assistant = models.ForeignKey(
-        AIAssistant, on_delete=models.CASCADE, related_name='chunks'
+        AIAssistant, on_delete=models.DO_NOTHING, related_name='chunks',
+        db_constraint=False,
     )
     content = models.TextField(verbose_name='Contenido del fragmento')
     metadata = models.JSONField(default=dict, verbose_name='Metadatos (Establecimiento, Rol, Doc)')

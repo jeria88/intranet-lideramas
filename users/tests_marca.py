@@ -106,3 +106,55 @@ class SinMarcaDeClienteTests(SimpleTestCase):
                 f'El Procfile ejecuta "{comando}" en cada deploy: eso reinstala los '
                 f'datos de un cliente en cualquier organización nueva.',
             )
+
+
+# Una contraseña escrita en el repositorio no se arregla borrándola después: queda
+# en el historial de git para siempre, y sirve en toda instancia donde esa
+# migración haya corrido. `ai_modules/0021` puso una así, y el usuario que crea
+# apareció activo en la instancia pública el 2026-08-09.
+CONTRASENA_LITERAL = re.compile(
+    r"""(set_password|make_password)\s*\(\s*["'][^"']""",  # con un literal no vacío
+)
+
+
+class SinCredencialesEnElCodigoTests(SimpleTestCase):
+    """Vigila la clase entera, no el caso que ya pasó.
+
+    Cubre TAMBIÉN las migraciones, que el resto de los guardias excluye a
+    propósito: son historia y no se reescriben, pero una nueva no puede volver a
+    sembrar credenciales.
+    """
+
+    def _archivos_python(self):
+        raiz = Path(settings.BASE_DIR)
+        salida = subprocess.run(
+            ['git', 'ls-files', '*.py'], cwd=raiz,
+            capture_output=True, text=True, check=False,
+        ).stdout.splitlines()
+        for relativo in salida:
+            if '/scratch/' in f'/{relativo}' or relativo.startswith('scratch/'):
+                continue
+            if relativo.endswith('tests_marca.py'):  # contiene el patrón por definición
+                continue
+            ruta = raiz / relativo
+            if ruta.is_file():
+                yield relativo, ruta
+
+    def test_ninguna_migracion_ni_modulo_fija_una_contrasena_literal(self):
+        hallazgos = []
+        for relativo, ruta in self._archivos_python():
+            try:
+                texto = ruta.read_text(encoding='utf-8')
+            except (UnicodeDecodeError, OSError):
+                continue
+            for n, linea in enumerate(texto.splitlines(), 1):
+                if CONTRASENA_LITERAL.search(linea):
+                    hallazgos.append(f'{relativo}:{n}')
+
+        self.assertEqual(
+            hallazgos, [],
+            'Hay una contraseña escrita en el código. Queda en el historial de git '
+            'para siempre y sirve en toda instancia que corra ese código. Usa '
+            'make_password(None) o una variable de entorno:\n  '
+            + '\n  '.join(hallazgos),
+        )

@@ -64,6 +64,20 @@ class Command(BaseCommand):
             ))
             return
 
+        # Fuera de la transacción a propósito: los chunks viven en OTRA base de
+        # datos, así que este borrado no participa del atomic de la principal y no
+        # se desharía con un rollback. Va primero porque, si algo falla después, es
+        # preferible haber limpiado de más en la base de conocimiento que dejar
+        # fragmentos de un cliente que pidió su baja.
+        from ai_modules.models import AIAssistant, borrar_chunks_de
+
+        chunks = borrar_chunks_de(AIAssistant.todos.filter(organizacion=organizacion))
+        if chunks is None:
+            self.stdout.write(self.style.WARNING(
+                'Base de conocimiento no disponible: sus fragmentos quedan sin borrar. '
+                'La baja sigue adelante.'
+            ))
+
         with transaction.atomic():
             # Los superusuarios primero: `User.organizacion` es PROTECT y bloquearía
             # el borrado de la organización. Se limpian también los CharFields

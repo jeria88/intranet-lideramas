@@ -395,6 +395,55 @@ class PurgarOrganizacionTests(TestCase):
         self.assertTrue(Organizacion.objects.filter(pk=otra.pk).exists())
         self.assertTrue(User.objects.filter(pk=ajeno.pk).exists())
 
+    def test_borra_una_organizacion_que_tiene_asistentes(self):
+        """El caso que rompía en producción y que ningún test cubría.
+
+        `AIKnowledgeChunk` vive SIEMPRE en la base `knowledge_base` (por router) y
+        su tabla solo se crea ahí (`allow_migrate`). Cuando esa base es un alias de
+        la principal —que es como corre Oracle sin `KNOWLEDGE_BASE_URL`— la tabla
+        no existe en ningún lado, y el collector de Django la consultaba igual al
+        cascadear desde `AIAssistant`:
+
+            ProgrammingError: relation "ai_modules_aiknowledgechunk" does not exist
+
+        Resultado: la baja de un cliente era imposible en producción. El entorno de
+        test reproduce la misma condición, así que este test falla sin el fix.
+        """
+        from ai_modules.models import AIAssistant
+
+        asistente = AIAssistant.objects.create(
+            name='Director', slug='cliente-x-director', organizacion=self.org,
+        )
+
+        self._correr(confirmar='cliente_x')
+
+        self.assertFalse(Organizacion.objects.filter(slug='cliente_x').exists())
+        self.assertFalse(AIAssistant.todos.filter(pk=asistente.pk).exists())
+
+
+class UsuarioSembradoPorMigracionesTests(TestCase):
+    """El usuario que crean `ai_modules/0017` y `0021` no puede entrar a nada.
+
+    Se prueba sobre la base de test, que nace con las migraciones aplicadas: es
+    exactamente lo que obtiene una instalación nueva del producto.
+    """
+
+    def test_el_director_sembrado_esta_cerrado(self):
+        sembrado = User.objects.filter(username='director.admin').first()
+        if sembrado is None:
+            self.skipTest('Las migraciones ya no siembran director.admin')
+
+        self.assertFalse(
+            sembrado.is_active,
+            'director.admin nace activo. Su contraseña estuvo escrita en el repo, '
+            'así que cualquiera con acceso al historial de git entraría.',
+        )
+        self.assertFalse(
+            sembrado.has_usable_password(),
+            'director.admin nace con una contraseña usable sembrada por una migración.',
+        )
+        self.assertFalse(sembrado.is_superuser)
+
 
 class CrearOrganizacionTests(TestCase):
     """Alta de un cliente sin tocar código — reemplaza a `setup_all_establishments`."""
